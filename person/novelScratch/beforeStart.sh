@@ -27,6 +27,7 @@ cd Python-3.7.0.tgz
 make && make install
 #添加python3的软链接 
 sudo ln -sf /usr/local/python3/bin/python3.7 /usr/bin/python3.7 
+sudo ln -sf /usr/local/python3/bin/python3.7 /usr/local/bin/python
 #添加 pip3 的软链接 
 sudo ln -sf /usr/local/python3/bin/pip3.7 /usr/bin/pip3.7
 # 更改yum配置，因为其要用到python2才能执行，否则会导致yum不能正常使用
@@ -35,6 +36,12 @@ sudo ln -sf /usr/local/python3/bin/pip3.7 /usr/bin/pip3.7
 # vi /usr/libexec/urlgrabber-ext-down 
 # 把 #! /usr/bin/python 修改为 #! /usr/bin/python2
 
+# change default python2 to python3
+# ls /usr/bin/python*
+# vi ~/.bashrc
+# add alias python='/usr/bin/python3.4' to ~/.bashrc
+# . ~/.bashrc
+# python --version
 
 
 # clone project
