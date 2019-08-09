@@ -12,6 +12,12 @@
 
 5. 合并每一个章节内容，保存成TXT
 
+### 部署
+
+1. centos中先执行 phantamjs.sh beforeStart.sh
+
+2. 安装配置nginx. nginx.sh(TODO 未完成)
+
 
 
 

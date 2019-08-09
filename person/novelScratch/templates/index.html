@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <title>小说txt下载</title>
+    <style>
+      html, body, input {
+        margin: 0;
+        padding: 0;
+      }
+      .search-form {
+        position: fixed;
+        left: calc(50% - 250px);
+        top: 25%;
+        width: 500px;
+        text-align: center;
+      }
+      #searchInput {
+        border: 1px solid rgb(8, 7, 7);
+        width: 500px;
+        height: 40px;
+        font-size: 16px;
+        line-height: 40px;
+        border-radius: 20px;
+        color: #999;
+        outline: none;
+      }
+      .submit-btn {
+        width: 100px;
+        height: 30px;
+        font-size: 14px;
+        line-height: 14px;
+        border: 0;
+        margin-top: 20px;
+      }
+      ::placeholder {
+        color: #999;
+        font-size: 14px;
+        line-height: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="search-form" action="/search" method="post">
+      <input type="text" id="searchInput" name="searchUrl" placeholder="请输入待爬取的地址..." />
+      <br>
+      <input type="submit" class="submit-btn" value="查询" />
+      <br>
+      {% if novelName %}
+        <a href="{{ url_for('static', filename=novelName) }}" download="{{ novelName }}">{{ novelName }}</a>
+      {% endif %}
+    </form>  
+    <script>
+    
+    </script>
+  </body>
+</html>

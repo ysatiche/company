@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+import platform
 
 class NoverScratch:
 
@@ -21,8 +22,14 @@ class NoverScratch:
   # @param {string} chromeDriver Local Path eg: C:\Program Files (x86)\Google\Chrome\Application\chromedriver 
   def __init__(self, chromeDriverPath):
     # chrome browser
-    defaultChromeDriverPath = 'C:\Program Files (x86)\Google\Chrome\Application\chromedriver'
-    self.browser = webdriver.Chrome(defaultChromeDriverPath)
+    # defaultChromeDriverPath = 'C:\Program Files (x86)\Google\Chrome\Application\chromedriver'
+    # self.browser = webdriver.Chrome(defaultChromeDriverPath)
+    # phantomjs
+    defaultPhantomjsPath = './phantomjs'
+    if platform.system() == 'Linux':
+      # specfic path related to phantamjs.sh
+      defaultPhantomjsPath = '/usr/local/src/phantomjs/bin/phantomjs'
+    self.browser = webdriver.PhantomJS(executable_path=defaultPhantomjsPath)
     # headless chrome
     # chrome_options = Options()  
     # chrome_options.add_argument('--headless')  
@@ -36,6 +43,7 @@ class NoverScratch:
   # get each chapter link by menu link
   # @param {string} url eg:http:// or https://www.biquyun.com/1_1559/
   # @returns {array} each chapter link Array
+  # @returns {chapterName} chapterName
   def getEachChapterLink (self, menuUrl):
     # check param validation
     if menuUrl.index('http') > -1 or menuUrl.index('https') > -1:
@@ -48,6 +56,7 @@ class NoverScratch:
         )
         html = self.browser.page_source
         doc = pq(html)
+        chapterName = doc('#info > h1').text()
         items = doc('#list > dl > dd > a').items()
         chapterLinkArr = []
         # add each link
@@ -59,16 +68,17 @@ class NoverScratch:
           linkArr = link.split('/')
           linkSuffix = linkArr[len(linkArr) - 1]
           chapterLinkArr.append(menuUrl + linkSuffix)
-        return chapterLinkArr
+        return chapterLinkArr, chapterName
       except TimeoutException:
         # todo
-        print('error')
+        # print('error')
         return
 
   # get specific text by each chapter link
   # @param {string} chapter link eg:https://www.biquyun.com/1_1559/9986611.html
+  # @param {chapterName} chapterName
   # @returns {string} novel text or other info (TODO)
-  def getSpecificTextByChapterLink(self, chapterLink):
+  def getSpecificTextByChapterLink(self, chapterLink, chapterName):
     try:
       self.browser.get(chapterLink)
       chapterContent = self.wait.until(
@@ -82,13 +92,14 @@ class NoverScratch:
       # parse chapterText because chapterText mat like this. eg: &nbsp;&nbsp;&nbsp;&nbsp;第一五二章风雨初平<br>
 
       # write chaptertext to txt
-      self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'))
+      self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'), chapterName)
 
     except TimeoutException:
       return
 
   # parse chapterText eg: &nbsp;&nbsp;&nbsp;&nbsp;第一五二章风雨初平<br>
   # @param {string} chapterText to be parsed
+  # @param {chapterName} chapterName
   # @returns {array} content after parsing
   def parseChapterContent(self, chapterContent):
     # parse &nbsp; and <br/> by re
@@ -99,10 +110,10 @@ class NoverScratch:
   # write content to local txt
   # @params {array} chapterContent array
   # @returns {boolean} write success or false
-  def writeTextToLocalTXT(self, chapterContent):
+  def writeTextToLocalTXT(self, chapterContent, chapterName):
     file = None
     try:
-      file = open('test.txt', 'ab+')
+      file = open('static/' + chapterName + '.txt', 'ab+')
       if isinstance(chapterContent, list):
         # '\r\n' represent \n normaly
         file.writelines(chapterContent)
@@ -113,16 +124,30 @@ class NoverScratch:
     finally:
       file.close()
 
+  # write each chapter to txt
+  # @param {link} eg.https://www.biquyun.com/1_1559/
+  def writeTotalChapterToTxt (self, link):
+    linkArr, chapterName = self.getEachChapterLink(link)
+    i = 0
+    try:
+      for chanpterLink in linkArr:
+        if i < 5:
+          self.getSpecificTextByChapterLink(chanpterLink, chapterName)
+        i = i + 1
+      return chapterName + '.txt'
+    except IOError:
+      return -1
 
 
-if __name__ == '__main__':
-  noverScratch = NoverScratch('')
-  linkArr = noverScratch.getEachChapterLink('https://www.biquyun.com/1_1559/')
-  i = 0
-  for link in linkArr:
-    # if i < 5:
-    noverScratch.getSpecificTextByChapterLink(link)
-    # i = i + 1
+# eg
+# if __name__ == '__main__':
+  # noverScratch = NoverScratch('')
+  # linkArr = noverScratch.getEachChapterLink('https://www.biquyun.com/1_1559/')
+  # i = 0
+  # for link in linkArr:
+  #   # if i < 5:
+  #   noverScratch.getSpecificTextByChapterLink(link)
+  #   # i = i + 1
   
 
 
