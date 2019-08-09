@@ -72,7 +72,7 @@ class NoverScratch:
       except TimeoutException:
         # todo
         # print('error')
-        return
+        return [], ''
 
   # get specific text by each chapter link
   # @param {string} chapter link eg:https://www.biquyun.com/1_1559/9986611.html

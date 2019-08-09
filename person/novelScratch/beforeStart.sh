@@ -41,3 +41,4 @@ sudo ln -sf /usr/local/python3/bin/pip3.7 /usr/bin/pip3.7
 git clone https://github.com/Onenotmind/company.git
 cd ~/company/person/novelScratch
 pip install pyquery selenium flask
+python __init__.py

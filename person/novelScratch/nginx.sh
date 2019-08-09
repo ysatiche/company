@@ -7,4 +7,8 @@ cd ~/company/person/novelScratch
 # basePath current /company/person/novelScratch
 sudo mv ./flask-novelScratch.conf /etc/nginx/conf.d/flask-novelScratch.conf
 
-sudo service nginx reload
+# centos6
+# sudo service nginx reload
+
+# centos7
+systemctl start nginx

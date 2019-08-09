@@ -11,7 +11,7 @@ def search():
   if request.method == 'POST':
     # print(request.form['searchUrl'])
     noverScratch = NoverScratch('')
-    chapterName = noverScratch.writeTotalChapterToTxt('https://www.biquyun.com/1_1559/')
+    chapterName = noverScratch.writeTotalChapterToTxt(request.form['searchUrl'])
     # print(chapterName)
     if chapterName != -1:
       url_for('static', filename=chapterName)
