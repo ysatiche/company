@@ -5,7 +5,7 @@ yum install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel read
 #运行这个命令添加epel扩展源 
 yum -y install epel-release 
 #安装pip 
-yum install python-pip
+yum -y install python-pip
 wget https://www.python.org/ftp/python/3.7.0/Python-3.7.0.tgz
 #解压缩
 tar -zxvf Python-3.7.0.tgz

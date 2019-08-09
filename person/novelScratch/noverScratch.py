@@ -29,7 +29,9 @@ class NoverScratch:
     if platform.system() == 'Linux':
       # specfic path related to phantamjs.sh
       defaultPhantomjsPath = '/usr/local/src/phantomjs/bin/phantomjs'
-    self.browser = webdriver.PhantomJS(executable_path=defaultPhantomjsPath)
+      self.browser = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], executable_path=defaultPhantomjsPath)
+    else:
+      self.browser = webdriver.PhantomJS(executable_path=defaultPhantomjsPath)
     # headless chrome
     # chrome_options = Options()  
     # chrome_options.add_argument('--headless')  

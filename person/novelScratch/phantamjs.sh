@@ -2,7 +2,7 @@
 
 # chmod 755 phantomjs.sh
 # centos
-sudo yum install gcc gcc-c++ make git openssl-devel freetype-devel fontconfig-devel
+sudo yum install gcc gcc-c++ make git openssl-devel freetype-devel fontconfig-devel -y
 
 # ubuntu
 # sudo apt-get install build-essential chrpath git-core libssl-dev libfontconfig1-dev libxft-dev
