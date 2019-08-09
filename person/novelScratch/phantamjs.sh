@@ -6,7 +6,7 @@ sudo yum install gcc gcc-c++ make git openssl-devel freetype-devel fontconfig-de
 
 # ubuntu
 # sudo apt-get install build-essential chrpath git-core libssl-dev libfontconfig1-dev libxft-dev
-
+cd ~
 wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2
 
 tar -xvf phantomjs-1.9.7-linux-x86_64.tar.bz2
