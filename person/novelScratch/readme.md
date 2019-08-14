@@ -22,14 +22,25 @@
 
 1. 请求队列，防止请求过多服务器崩溃(redis or rabbitmq)
 
+redis[ok]
+
+rabbitmq[prepare]
+
+supervisor[prepare]
+
 2. 添加logstash
 
 3. 多线程下载txt
+
+multi thread [ok]
+
+multi process [prepare]
 
 4. 百度云储存对接
 
 5. docker化配置
 
+6. optimized noverScratch.py code
 
 
 

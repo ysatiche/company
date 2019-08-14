@@ -33,7 +33,7 @@ class NoverScratch:
     if platform.system() == 'Linux':
       # specfic path related to phantamjs.sh
       defaultPhantomjsPath = '/usr/local/src/phantomjs/bin/phantomjs'
-      self.browser = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'], executable_path=defaultPhantomjsPath)
+      self.browser = webdriver.PhantomJS(service_args=['--ignore-ssl-errors=true', '--ssl-protocol=any'])
     else:
       self.browser = webdriver.PhantomJS(executable_path=defaultPhantomjsPath)
     # headless chrome
@@ -187,20 +187,5 @@ class NoverScratch:
       return chapterName + '.txt'
     except IOError:
       return -1
-
-
-# eg
-# if __name__ == '__main__':
-  # noverScratch = NoverScratch('')
-  # linkArr = noverScratch.getEachChapterLink('https://www.biquyun.com/1_1559/')
-  # i = 0
-  # for link in linkArr:
-  #   # if i < 5:
-  #   noverScratch.getSpecificTextByChapterLink(link)
-  #   # i = i + 1
   
-
-
-
-
 
