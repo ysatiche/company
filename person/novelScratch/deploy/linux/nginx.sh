@@ -3,7 +3,7 @@
 # todo 
 sudo yum install nginx -y
 
-cd ~/company/person/novelScratch
+cd ~/company/person/novelScratch/deploy
 # basePath current /company/person/novelScratch
 sudo mv ./flask-novelScratch.conf /etc/nginx/conf.d/flask-novelScratch.conf
 

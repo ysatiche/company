@@ -1,0 +1,29 @@
+# ubuntu18 /etc/filebeat/filebeat.yml
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - ~/person/company/person/novelScratch/log/*.log
+    - /var/log/syslog
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+setup.template.settings:
+  index.number_of_shards: 1
+
+setup.kibana:
+  host: "localhost:5601"
+
+# output.elasticsearch:
+#   hosts: ["localhost:9200"]
+
+
+output.logstash:
+  # The Logstash hosts
+  hosts: ["localhost:5044"]
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~

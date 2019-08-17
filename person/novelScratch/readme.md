@@ -26,7 +26,7 @@ redis[ok]
 
 rabbitmq[prepare]
 
-supervisor[prepare]
+supervisor systemd[prepare]
 
 2. 添加logstash
 
@@ -43,6 +43,18 @@ multi process [prepare]
 6. optimized noverScratch.py code
 
 
+# today
 
+1. flask -> invoke a mq(write log to local) -> filebeat (get nginx local log) -> logstash -> es -> kibana
+
+log data format
+
+elastic config1(include filebeat, es, kibana)
+
+elastic config2(include filebeat, logstash, es, kibana)
+
+2. multi process, multi thread, queue, ordered queue
+
+3. supervisor systemd to manager thread
 
 
