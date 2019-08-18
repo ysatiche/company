@@ -15,7 +15,7 @@ https://www.cnblogs.com/cjsblog/p/9459781.html
 > start elastic
 
 way1:
-sudo systemctl start/stop/restart/status logstash.service
+sudo systemctl enable/start/stop/restart/status logstash.service
 
 way2:
 eg:logstash -> sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/pipeline.conf

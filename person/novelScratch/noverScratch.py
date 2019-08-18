@@ -89,23 +89,22 @@ class NoverScratch:
   # @returns {string} novel text or other info (TODO)
   def getSpecificTextByChapterLink(self, chapterLink, chapterName, thread_id):
     try:
-      # get lock
-      self.threadLock.acquire()
       self.browser.get(chapterLink)
       chapterContent = self.wait.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '#content'))
       )
       html = self.browser.page_source
-      # release lock
-      self.threadLock.release()
       doc = pq(html)
       chapterTitle = doc('#wrapper > div.content_read > div > div.bookname > h1').text()
       chapterText = doc('#content').text()
       # chapterText may include chapterTitle 标题写了两遍
       # parse chapterText because chapterText mat like this. eg: &nbsp;&nbsp;&nbsp;&nbsp;第一五二章风雨初平<br>
       # write chaptertext to txt
+      # get lock
+      self.threadLock.acquire()
       self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'), chapterName, thread_id)
-
+      # release lock
+      self.threadLock.release()
     except TimeoutException:
       return
 
@@ -126,7 +125,8 @@ class NoverScratch:
   def writeTextToLocalTXT(self, chapterContent, chapterName, thread_id):
     file = None
     try:
-      file = open('static/' + chapterName + '_' + str(thread_id) + '.txt', 'ab+')
+      # file = open('static/' + chapterName + '_' + str(thread_id) + '.txt', 'ab+')
+      file = open('static/' + chapterName  + '.txt', 'ab+')
       if isinstance(chapterContent, list):
         # '\r\n' represent \n normaly
         file.writelines(chapterContent)
@@ -176,14 +176,14 @@ class NoverScratch:
   def writeTotalChapterToTxt (self, link):
     linkArr, chapterName = self.getEachChapterLink(link)
     thread_num = 5
-    linkArr = linkArr[:50]
+    # linkArr = linkArr[:50]
     try:
       self.multiThreadGetChapter(linkArr, thread_num, chapterName)
-      thread_txt = ['static/' + chapterName + '_' + str(i) + '.txt' for i in range(thread_num)]
-      self.joinTxtFile(thread_txt, 'static/' + chapterName + '.txt')
-      for tfile in thread_txt:
-        if os.path.exists(tfile):
-          os.remove(tfile)
+      # thread_txt = ['static/' + chapterName + '_' + str(i) + '.txt' for i in range(thread_num)]
+      # self.joinTxtFile(thread_txt, 'static/' + chapterName + '.txt')
+      # for tfile in thread_txt:
+      #   if os.path.exists(tfile):
+      #     os.remove(tfile)
       return chapterName + '.txt'
     except IOError:
       return -1

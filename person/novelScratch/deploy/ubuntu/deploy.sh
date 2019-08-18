@@ -3,6 +3,7 @@
 
 # before
 sudo apt-get update
+sudo apt-get upgrade
 sudo apt update
 sudo apt upgrade
 # in ubuntu18 already have python3.6, just install pip3
@@ -62,6 +63,9 @@ sudo filebeat modules enable nginx
 # sudo wget http://igm.univ-mlv.fr/~cherrier/download/L1/access.log
 # wget https://raw.githubusercontent.com/respondcreate/nginx-access-log-frequency/master/example-access.log
 
+# install redis
+sudo apt install redis-server
+sudo systemctl start redis-server.service
 
 # install
 cd ~/company/person/novelScratch
