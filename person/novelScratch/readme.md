@@ -26,9 +26,11 @@ redis[ok]
 
 rabbitmq[prepare]
 
+kafka[prepare]
+
 supervisor systemd[prepare]
 
-2. 添加logstash
+2. 添加logstash[ok]
 
 3. 多线程下载txt
 
@@ -54,6 +56,10 @@ elastic config1(include filebeat, es, kibana)
 elastic config2(include filebeat, logstash, es, kibana)
 
 2. multi process, multi thread, queue, ordered queue
+
+ques:
+<1> how quit multiprocess when queue is empty.
+<2> why selenium is normal when use multiprocess instead of using multithread. 
 
 3. supervisor systemd to manager thread
 

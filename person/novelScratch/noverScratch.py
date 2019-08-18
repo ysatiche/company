@@ -13,6 +13,8 @@ import platform
 from threading import Thread
 import threading
 import os
+from multiprocessing import Queue
+from efficientWorker import EfficientWorker
 
 class NoverScratch:
 
@@ -46,11 +48,12 @@ class NoverScratch:
     self.wait = WebDriverWait(self.browser, 10)
     # multi thread lock
     self.threadLock = threading.Lock()
+    # Queue
+    self.queue = Queue()
     
 
   # get each chapter link by menu link
   # @param {string} url eg:http:// or https://www.biquyun.com/1_1559/
-  # @returns {array} each chapter link Array
   # @returns {chapterName} chapterName
   def getEachChapterLink (self, menuUrl):
     # check param validation
@@ -66,7 +69,6 @@ class NoverScratch:
         doc = pq(html)
         chapterName = doc('#info > h1').text()
         items = doc('#list > dl > dd > a').items()
-        chapterLinkArr = []
         # add each link
         for item in items:
           link = item.attr('href')
@@ -75,19 +77,19 @@ class NoverScratch:
           # current use split to join
           linkArr = link.split('/')
           linkSuffix = linkArr[len(linkArr) - 1]
-          chapterLinkArr.append(menuUrl + linkSuffix)
-        return chapterLinkArr, chapterName
+          self.queue.put(menuUrl + linkSuffix)
+        return chapterName
       except TimeoutException:
         # todo
         # print('error')
-        return [], ''
+        return ''
 
   # get specific text by each chapter link
   # @param {string} chapter link eg:https://www.biquyun.com/1_1559/9986611.html
   # @param {chapterName} chapterName
   # @param {thread_id} thread id
   # @returns {string} novel text or other info (TODO)
-  def getSpecificTextByChapterLink(self, chapterLink, chapterName, thread_id):
+  def getSpecificTextByChapterLink(self, chapterLink, chapterName):
     try:
       self.browser.get(chapterLink)
       chapterContent = self.wait.until(
@@ -102,7 +104,7 @@ class NoverScratch:
       # write chaptertext to txt
       # get lock
       self.threadLock.acquire()
-      self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'), chapterName, thread_id)
+      self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'), chapterName)
       # release lock
       self.threadLock.release()
     except TimeoutException:
@@ -122,7 +124,7 @@ class NoverScratch:
   # @params {array} chapterContent array
   # @param {thread_id} thread id
   # @returns {boolean} write success or false
-  def writeTextToLocalTXT(self, chapterContent, chapterName, thread_id):
+  def writeTextToLocalTXT(self, chapterContent, chapterName):
     file = None
     try:
       # file = open('static/' + chapterName + '_' + str(thread_id) + '.txt', 'ab+')
@@ -150,35 +152,23 @@ class NoverScratch:
   # @param {linkArr} linkArr to handle
   # @param {thread_num} thread num
   # @param {chapterName} chapterName
-  def multiThreadGetChapter (self, linkArr, thread_num, chapterName):
-    threads = []
-    threadLinkArr = chunkIt(linkArr, thread_num)
-    for i in range(thread_num):
-      th = Thread(target=self.batchWriteChapterToTxt, args=(threadLinkArr[i], chapterName, i))
-      th.start()
-      threads.append(th)
-    for th in threads:
-      th.join()
+  def multiThreadGetChapter (self, thread_num, chapterName):
+    efficientWorker = EfficientWorker(self.batchWriteChapterToTxt, [chapterName], 'thread', 4, 5)
+    efficientWorker.start()
 
   # batch write chapter to txt
-  # @param {linkArr} linkArr to handle
-  # @param {thread_id} thread id
-  def batchWriteChapterToTxt (self, linkArr, chapterName, thread_id):
-    try:
-      for chanpterLink in linkArr:
-        self.getSpecificTextByChapterLink(chanpterLink, chapterName, thread_id)
-    except IOError:
-      return -1
-
+  def batchWriteChapterToTxt (self, chapterName):
+    while self.queue.empty() != True:
+      chanpterLink = self.queue.get()
+      self.getSpecificTextByChapterLink(chanpterLink, chapterName)
 
   # write each chapter to txt
   # @param {link} eg.https://www.biquyun.com/1_1559/
   def writeTotalChapterToTxt (self, link):
-    linkArr, chapterName = self.getEachChapterLink(link)
+    chapterName = self.getEachChapterLink(link)
     thread_num = 5
-    # linkArr = linkArr[:50]
     try:
-      self.multiThreadGetChapter(linkArr, thread_num, chapterName)
+      self.multiThreadGetChapter(thread_num, chapterName)
       # thread_txt = ['static/' + chapterName + '_' + str(i) + '.txt' for i in range(thread_num)]
       # self.joinTxtFile(thread_txt, 'static/' + chapterName + '.txt')
       # for tfile in thread_txt:

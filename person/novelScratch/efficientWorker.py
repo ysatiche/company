@@ -27,10 +27,9 @@ class EfficientWorker:
       self.processNum = processNum
     if self.enabledType != 'process':
       self.threadNum = threadNum
-    self.taskQueue = taskQueue
 
   def _initMultiProcess(self, processNum, func, args):
-    for _ in range(processNum)
+    for _ in range(processNum):
       p = Process(target=func, args=(*args,))
       p.start()
       p.join()
@@ -44,7 +43,7 @@ class EfficientWorker:
   def _initMultiProcessAndThred(self):
     self._initMultiProcess(self.processNum, self._initMultiThread, [self.threadNum, self.func, self.args])
 
-  def start():
+  def start(self):
     if self.enabledType == 'thread':
       self._initMultiThread(self.threadNum, self.func, self.args)
     if self.enabledType == 'process':
