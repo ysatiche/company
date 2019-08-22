@@ -69,4 +69,4 @@ sudo systemctl start redis-server.service
 
 # install
 cd ~/company/person/novelScratch
-pip3 install redis rq flask pyquery selenium
+sudo pip3 install redis rq flask pyquery selenium kafka-python

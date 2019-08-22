@@ -32,11 +32,11 @@ supervisor systemd[prepare]
 
 2. 添加logstash[ok]
 
-3. 多线程下载txt
+3. 多线程下载txt [ok]
 
 multi thread [ok]
 
-multi process [prepare]
+multi process [ok]
 
 4. 百度云储存对接
 
@@ -56,10 +56,6 @@ elastic config1(include filebeat, es, kibana)
 elastic config2(include filebeat, logstash, es, kibana)
 
 2. multi process, multi thread, queue, ordered queue
-
-ques:
-<1> how quit multiprocess when queue is empty.
-<2> why selenium is normal when use multiprocess instead of using multithread. 
 
 3. supervisor systemd to manager thread
 

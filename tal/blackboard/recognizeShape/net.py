@@ -29,7 +29,7 @@ import warnings
 warnings.filterwarnings('ignore')
 clean_start = True
 
-data = pd.read_csv('Conic-Section_dataset.csv', index_col=False)
+data = pd.read_csv('dataset.csv', index_col=False)
 data = data.sample(frac=1, random_state=42).reset_index()
 data.drop(['index'], 1, inplace=True)
 

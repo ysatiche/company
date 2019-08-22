@@ -107,7 +107,7 @@ for i in range(1000):
   rotation = rotation_array[get_random_index(len(rotation_array))]
   x,y = createParabola(focal_length= focal_length, centre= [centre_x, centre_y],rotation= rotation)
   x_, y_ = get_n_samples(x, y, sample_count)
-  data = build_dataset(x_, y_, 'parabola')
+  data = build_dataset(x_, y_, '0')
   parabola_dataset = parabola_dataset.append(data, ignore_index=True)
 
 # Ellipse
@@ -127,7 +127,7 @@ for i in range(1000):
   rotation = rotation_array[get_random_index(len(rotation_array))]
   x,y = createEllipse(major_axis=major_axis, minor_axis=minor_axis, centre= [centre_x,centre_y], rotation= rotation)
   x_,y_ = get_n_samples(x, y, sample_count)
-  data = build_dataset(x_, y_, 'ellipse')
+  data = build_dataset(x_, y_, '1')
   ellipse_dataset = ellipse_dataset.append(data, ignore_index=True)
 
 # Hyperbola
@@ -147,7 +147,7 @@ for i in range(1000):
   rotation = rotation_array[get_random_index(len(rotation_array))]
   x,y = createHyperbola(major_axis=major_axis, conjugate_axis=conjugate_axis, centre= [centre_x,centre_y], rotation= rotation)
   x_,y_ = get_n_samples(x, y, sample_count)
-  data = build_dataset(x_, y_, 'hyperbola')
+  data = build_dataset(x_, y_, '0')
   hyperbola_dataset = hyperbola_dataset.append(data, ignore_index=True)
 
 # Circle
@@ -163,7 +163,7 @@ for i in range(1000):
   centre_y = centre_y_arr[get_random_index(len(centre_y_arr))]
   x,y = createCircle(radius = radius, centre= [centre_x,centre_y])
   x_,y_ = get_n_samples(x, y, sample_count)
-  data = build_dataset(x_, y_, 'circle')
+  data = build_dataset(x_, y_, '1')
   circle_dataset = circle_dataset.append(data, ignore_index=True)
 
 # blackboard_shape
@@ -190,4 +190,4 @@ triangle_y_arr = np.linspace(20,800,100)
 #   circle_dataset = circle_dataset.append(data, ignore_index=True)
 
 combined_dataset = pd.concat([parabola_dataset, ellipse_dataset, hyperbola_dataset, circle_dataset])
-combined_dataset.to_csv('Conic-Section_dataset.csv', index=False)
+combined_dataset.to_csv('dataset.csv', index=False)

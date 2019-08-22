@@ -40,5 +40,14 @@ whereis -b logstash
 to show each module installed and started successfully. you can just type this:
 curl -XGET 'http://localhost:${modulePort}?pretty' eg: curl -XGET 'http://localhost:9200?pretty'
 
+
+### ubuntu18 create new user
+
+> sudo useradd chenye -m
+
+> sudo passwd chenye
+
+> sudo adduser chenye sudo
+
 # linux
 
