@@ -91,7 +91,7 @@ def build_dataset(x_, y_, shape):
 
 
 # batch generator
-sample_count = 6
+sample_count = 50
 # Parabola
 focal_length_array = np.linspace(1, 20, 100)
 centre_x_arr = np.linspace(-12, 12, 100)
@@ -105,7 +105,7 @@ for i in range(1000):
   centre_x = centre_x_arr[get_random_index(len(centre_x_arr))]
   centre_y = centre_y_arr[get_random_index(len(centre_y_arr))]
   rotation = rotation_array[get_random_index(len(rotation_array))]
-  x,y = createParabola(focal_length= focal_length, centre= [centre_x, centre_y],rotation= rotation)
+  x,y = createParabola(focal_length= focal_length, centre= [centre_x, centre_y],rotation= None)
   x_, y_ = get_n_samples(x, y, sample_count)
   data = build_dataset(x_, y_, '0')
   parabola_dataset = parabola_dataset.append(data, ignore_index=True)
@@ -125,7 +125,7 @@ for i in range(1000):
   centre_x = centre_x_arr[get_random_index(len(centre_x_arr))]
   centre_y = centre_y_arr[get_random_index(len(centre_y_arr))]
   rotation = rotation_array[get_random_index(len(rotation_array))]
-  x,y = createEllipse(major_axis=major_axis, minor_axis=minor_axis, centre= [centre_x,centre_y], rotation= rotation)
+  x,y = createEllipse(major_axis=major_axis, minor_axis=minor_axis, centre= [centre_x,centre_y], rotation= None)
   x_,y_ = get_n_samples(x, y, sample_count)
   data = build_dataset(x_, y_, '1')
   ellipse_dataset = ellipse_dataset.append(data, ignore_index=True)
@@ -145,7 +145,7 @@ for i in range(1000):
   centre_x = centre_x_arr[get_random_index(len(centre_x_arr))]
   centre_y = centre_y_arr[get_random_index(len(centre_y_arr))]
   rotation = rotation_array[get_random_index(len(rotation_array))]
-  x,y = createHyperbola(major_axis=major_axis, conjugate_axis=conjugate_axis, centre= [centre_x,centre_y], rotation= rotation)
+  x,y = createHyperbola(major_axis=major_axis, conjugate_axis=conjugate_axis, centre= [centre_x,centre_y], rotation= None)
   x_,y_ = get_n_samples(x, y, sample_count)
   data = build_dataset(x_, y_, '0')
   hyperbola_dataset = hyperbola_dataset.append(data, ignore_index=True)

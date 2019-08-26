@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 import os
 import itertools
 import math
-np.set_printoptions(threshold=np.nan)
+# np.set_printoptions(threshold=np.nan)
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import shutil
@@ -33,8 +33,8 @@ data = pd.read_csv('dataset.csv', index_col=False)
 data = data.sample(frac=1, random_state=42).reset_index()
 data.drop(['index'], 1, inplace=True)
 
-X = data.values[:, :12]
-Y = data.values[:, 12]
+X = data.values[:, :100]
+Y = data.values[:, 100]
 
 # encode class values as int
 encoder = LabelEncoder()
@@ -47,7 +47,7 @@ dummy_y = np_utils.to_categorical(encoder_Y)
 # create model
 def baseline_model():
   model = Sequential()
-  model.add(Dense(128, input_dim=12, activation='relu'))
+  model.add(Dense(128, input_dim=100, activation='relu'))
   model.add(Dropout(0.2))
   model.add(Dense(256, activation='relu'))
   model.add(Dropout(0.3))
@@ -55,7 +55,7 @@ def baseline_model():
   model.add(Dropout(0.5))
   model.add(Dense(4, activation='relu'))
   model.add(Dropout(0.5))
-  model.add(Dense(4, activation='softmax'))
+  model.add(Dense(2, activation='softmax'))
   # compile model
   Adadelta = optimizers.Adadelta(lr = 1)
   model.compile(loss='categorical_crossentropy', optimizer=Adadelta, metrics=['accuracy'])
@@ -63,6 +63,9 @@ def baseline_model():
 
 model = baseline_model()
 history = model.fit(x=X,y=dummy_y,validation_split=0.2,shuffle=True, epochs=100, batch_size=12)
+
+model.save('my_model.h5') 
+# print(model.predict(np.zeros([1, 100])))
 train_loss = history.history['loss']
 val_loss = history.history['val_loss']
 
