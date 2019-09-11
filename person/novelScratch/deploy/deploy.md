@@ -49,5 +49,9 @@ curl -XGET 'http://localhost:${modulePort}?pretty' eg: curl -XGET 'http://localh
 
 > sudo adduser chenye sudo
 
+### 搜狗拼音安装
+
+https://www.iteye.com/blog/cherishlc-2320166
+
 # linux
 
