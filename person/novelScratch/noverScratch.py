@@ -15,6 +15,10 @@ import threading
 import os
 from multiprocessing import Queue
 from efficientWorker import EfficientWorker
+from novelSqlModel import NovelList, NovelChapter
+from flask_app import GetApp
+import time
+app, db = GetApp()
 
 class NoverScratch:
 
@@ -50,7 +54,31 @@ class NoverScratch:
     self.threadLock = threading.Lock()
     # Queue
     self.queue = Queue()
-    
+
+  # get novel basic info
+  def getNovelInfo (self, doc):
+    chapterName = doc('#getNovelId > div.crumbs > a').text()
+    novelAuthor = doc('#getNovelId > div.main-left > div.left-cent > div:nth-child(1) > h4').text()
+    novelCoverImgUrl = doc('#getNovelId > div.main-left > div.left-top > div.novelimg > img').attr('src')
+    novelOrigin = doc('#getNovelId > div.main-left > div.left-top > div.info > h4:nth-child(4) > a > span').text()
+    novelOriginUrl = doc('#getNovelId > div.main-left > div.left-top > div.info > h4:nth-child(4) > a').attr('href')
+    novelDescription = doc('#getNovelId > div.main-right > div.tab > div.tab-con > div.syn').text()
+    # print(novelDescription)
+    # novelDescription = 'fantacy'
+    novelClass = 'fantacy'
+    novelProcess = 'Completed'
+    # return chapterName, novelAuthor, novelCoverImgUrl, novelOrigin, novelOriginUrl, novelDescription, novelProcess
+    novelItem = NovelList(novel_name=chapterName, novel_author=novelAuthor, novel_cover_img_url=novelCoverImgUrl,novel_origin=novelOrigin, novel_origin_url=novelOriginUrl,novel_desciption=novelDescription,novel_class=novelClass,novel_process=novelProcess)
+    db.session.add(novelItem)
+    db.session.commit()
+
+  def getEachChapterInfo (self, doc, novelId, chapterIndex):
+    chapterText = doc('#chapter46729 > article > div.content').text()
+    chapterName = doc('#chapter46729 > article > h3').text()
+    novelChapter = NovelChapter(novel_id=novelId, chapter_name=chapterName, chapter_content=chapterText, chapter_index=chapterIndex)
+    print(novelChapter)
+    db.session.add(novelChapter)
+    db.session.commit()
 
   # get each chapter link by menu link
   # @param {string} url eg:http:// or https://www.biquyun.com/1_1559/
@@ -61,23 +89,30 @@ class NoverScratch:
       # begin browser load
       try:
         self.browser.get(menuUrl)
-        # add chapter link when content load
-        chapterList = self.wait.until(
-          EC.presence_of_element_located((By.CSS_SELECTOR, '#list'))
+        self.wait.until(
+          EC.presence_of_element_located((By.CSS_SELECTOR, '#getNovelId > div.main-right > div.tab > ul > li:nth-child(2)'))
+        )
+        self.browser.find_element_by_css_selector('#getNovelId > div.main-right > div.tab > ul > li:nth-child(2) > span').click()
+        self.wait.until(
+          EC.presence_of_element_located((By.CSS_SELECTOR, '#getNovelId > div.main-right > div.tab > div.contents > div'))
         )
         html = self.browser.page_source
         doc = pq(html)
-        chapterName = doc('#info > h1').text()
-        items = doc('#list > dl > dd > a').items()
+        chapterName = doc('#getNovelId > div.crumbs > a').text()
+        # self.getNovelInfo(doc)
+        items = doc('#getNovelId > div.main-right > div.tab > div.contents > div > ul > li > a').items()
         # add each link
+        chapterIndex = 0
         for item in items:
           link = item.attr('href')
           # eg /1_1559/952222.html
           # using re to join link TODO
           # current use split to join
-          linkArr = link.split('/')
-          linkSuffix = linkArr[len(linkArr) - 1]
-          self.queue.put(menuUrl + linkSuffix)
+          # linkArr = link.split('/')
+          # linkSuffix = linkArr[len(linkArr) - 1]
+          if chapterIndex < 1:
+            self.queue.put('https://www.novelspread.com' + link + '#' + str(chapterIndex))
+          chapterIndex = chapterIndex + 1
         return chapterName
       except TimeoutException:
         # todo
@@ -89,24 +124,28 @@ class NoverScratch:
   # @param {chapterName} chapterName
   # @param {thread_id} thread id
   # @returns {string} novel text or other info (TODO)
-  def getSpecificTextByChapterLink(self, chapterLink, chapterName):
+  def getSpecificTextByChapterLink(self, chapterLink, chapterName, novelId, chapterIndex):
     try:
       self.browser.get(chapterLink)
-      chapterContent = self.wait.until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, '#content'))
-      )
+      time.sleep(10)
+      # self.wait.until(
+      #   EC.presence_of_element_located((By.CSS_SELECTOR, '#chapter46729 > article > div.content'))
+      # )
       html = self.browser.page_source
       doc = pq(html)
-      chapterTitle = doc('#wrapper > div.content_read > div > div.bookname > h1').text()
-      chapterText = doc('#content').text()
+      body = self.browser.find_element_by_css_selector("html").attr('innerHTML')
+      print(body)
+      self.getEachChapterInfo(doc, novelId, chapterIndex)
+      # chapterTitle = doc('#wrapper > div.content_read > div > div.bookname > h1').text()
+
       # chapterText may include chapterTitle 标题写了两遍
       # parse chapterText because chapterText mat like this. eg: &nbsp;&nbsp;&nbsp;&nbsp;第一五二章风雨初平<br>
       # write chaptertext to txt
       # get lock
-      self.threadLock.acquire()
-      self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'), chapterName)
-      # release lock
-      self.threadLock.release()
+      # self.threadLock.acquire()
+      # self.writeTextToLocalTXT((' \r\n ' + chapterTitle + ' \r\n ' + chapterText).encode('utf-8'), chapterName)
+      # # release lock
+      # self.threadLock.release()
     except TimeoutException:
       return
 
@@ -160,21 +199,25 @@ class NoverScratch:
   def batchWriteChapterToTxt (self, chapterName):
     while self.queue.empty() != True:
       chanpterLink = self.queue.get()
-      self.getSpecificTextByChapterLink(chanpterLink, chapterName)
+      print('chanpterLink:', chanpterLink)
+      chapterIndexArr = chanpterLink.split('#')
+      chapterIndex = chapterIndexArr[len(chapterIndexArr) - 1]
+      self.getSpecificTextByChapterLink(chanpterLink, chapterName, 1, int(chapterIndex))
 
   # write each chapter to txt
   # @param {link} eg.https://www.biquyun.com/1_1559/
   def writeTotalChapterToTxt (self, link):
-    chapterName = self.getEachChapterLink(link)
+    # chapterName = self.getEachChapterLink(link)
+    self.getSpecificTextByChapterLink('https://www.novelspread.com/chapter/coiling-dragon/c-1-early-morning-at-a-township', 'chapterName', 1, 7)
     thread_num = 5
     try:
-      self.multiThreadGetChapter(thread_num, chapterName)
+      # self.multiThreadGetChapter(thread_num, chapterName)
       # thread_txt = ['static/' + chapterName + '_' + str(i) + '.txt' for i in range(thread_num)]
       # self.joinTxtFile(thread_txt, 'static/' + chapterName + '.txt')
       # for tfile in thread_txt:
       #   if os.path.exists(tfile):
       #     os.remove(tfile)
-      return chapterName + '.txt'
+      return 'chapterName' + '.txt'
     except IOError:
       return -1
   

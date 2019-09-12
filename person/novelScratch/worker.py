@@ -10,8 +10,7 @@ conn = redis.from_url('redis://@localhost:6379/1')
 # @param {url} url
 def novelScratchByUrl (url):
   noverScratch = NoverScratch('')
-  chapterName = noverScratch.writeTotalChapterToTxt(url)
-  return chapterName
+  return noverScratch.writeTotalChapterToTxt(url)
 
 if __name__ == '__main__':
   with Connection(conn):

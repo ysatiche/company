@@ -1,15 +1,15 @@
 from flask import Flask, render_template, request, url_for
-app = Flask(__name__)
 
 from rq import Queue
 from rq.job import Job
 from redis import Redis
 import time
 from worker import conn, novelScratchByUrl
-
+from flask_sqlalchemy import SQLAlchemy
+from flask_app import GetApp
 # create message queue
 q = Queue(connection=conn)
-  
+app, db = GetApp()
 
 @app.route('/')
 def index():
