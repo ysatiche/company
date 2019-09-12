@@ -14,6 +14,7 @@ create table novelList
   novel_origin_url varchar(80) not null,
   novel_desciption varchar(300) not null,
   novel_class varchar(50) not null,
+  novel_process char(10) not null,
   primary key(novel_id),
   index (novel_name),
   index (novel_author)

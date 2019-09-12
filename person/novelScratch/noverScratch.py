@@ -15,6 +15,8 @@ import threading
 import os
 from multiprocessing import Queue
 from efficientWorker import EfficientWorker
+from novelSqlModel import NovelList, NovelChapter
+from app import db
 
 class NoverScratch:
 
@@ -61,14 +63,18 @@ class NoverScratch:
       # begin browser load
       try:
         self.browser.get(menuUrl)
-        # add chapter link when content load
-        chapterList = self.wait.until(
-          EC.presence_of_element_located((By.CSS_SELECTOR, '#list'))
+        self.wait.until(
+          EC.presence_of_element_located((By.CSS_SELECTOR, '#getNovelId > div.main-right > div.tab > ul > li:nth-child(2)'))
+        )
+        self.browser.find_elements_by_css_selector('#getNovelId > div.main-right > div.tab > ul > li:nth-child(2)').click()
+        self.wait.until(
+          EC.presence_of_element_located((By.CSS_SELECTOR, '#getNovelId > div.main-right > div.tab > div.contents > div'))
         )
         html = self.browser.page_source
         doc = pq(html)
-        chapterName = doc('#info > h1').text()
-        items = doc('#list > dl > dd > a').items()
+        chapterName = doc('#getNovelId > div.crumbs > a').text()
+        print(chapterName)
+        items = doc('#getNovelId > div.main-right > div.tab > div.contents > div > ul > li > a').items()
         # add each link
         for item in items:
           link = item.attr('href')
@@ -166,6 +172,7 @@ class NoverScratch:
   # @param {link} eg.https://www.biquyun.com/1_1559/
   def writeTotalChapterToTxt (self, link):
     chapterName = self.getEachChapterLink(link)
+    return chapterName + '.txt'
     thread_num = 5
     try:
       self.multiThreadGetChapter(thread_num, chapterName)
