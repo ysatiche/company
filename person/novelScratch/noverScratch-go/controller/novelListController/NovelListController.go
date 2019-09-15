@@ -12,15 +12,26 @@ func GetNovelInfo(ctx iris.Context) {
 
 }
 
+// get each chapter data
+func GetSpecificChapter(ctx iris.Context) {
+	// novelId := ctx.FormValue("novelId")
+	chapterIndex := ctx.FormValue("chapterIndex")
+	queryStr := "select * from novelChapter where chapter_index = " + chapterIndex
+	chapter := novelListModel.DbExecString(queryStr)
+	ctx.JSON(iris.Map{
+		"data": chapter,
+	})
+}
+
 // insert novel
 func InsertNovel(ctx iris.Context) {
 	novelName := ctx.FormValue("novelName")
 	novelAuthor := ctx.FormValue("novelAuthor")
 	novelUrl := ctx.FormValue("novelUrl")
-	novel := &novelListModel.Novel{
+	novel := &novelListModel.NovelList{
 		NovelName: novelName,
 		NovelAuthor: novelAuthor,
-		NovelUrl: novelUrl,
+		NovelCoverImgUrl: novelUrl,
 	}
 	novelListModel.InserNovel(novel)
 	b, err := json.Marshal(novel)
