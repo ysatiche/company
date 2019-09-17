@@ -9,14 +9,19 @@ import (
 
 // getNovelInfo
 func GetNovelInfo(ctx iris.Context) {
-
+	novelId := ctx.FormValue("novelId")
+	queryStr := "select * from novellist where novel_id = " + novel_id
+	novel := novelListModel.DbExecString(queryStr)
+	ctx.JSON(iris.Map{
+		"data": novel,
+	})
 }
 
 // get each chapter data
 func GetSpecificChapter(ctx iris.Context) {
-	// novelId := ctx.FormValue("novelId")
+	novelId := ctx.FormValue("novelId")
 	chapterIndex := ctx.FormValue("chapterIndex")
-	queryStr := "select * from novelChapter where chapter_index = " + chapterIndex
+	queryStr := "select * from novelChapter where chapter_index = " + chapterIndex + " and novel_id = " + novel_id
 	chapter := novelListModel.DbExecString(queryStr)
 	ctx.JSON(iris.Map{
 		"data": chapter,
