@@ -13,6 +13,7 @@ class NovelList(db.Model):
   novel_origin = db.Column(db.String(64))
   novel_origin_url = db.Column(db.String(164))
   novel_desciption = db.Column(db.String(1500))
+  novel_price = db.Column(db.String(64))
   novel_class = db.Column(db.String(64))
   novel_process = db.Column(db.String(64))
 

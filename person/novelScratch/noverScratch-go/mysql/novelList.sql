@@ -13,6 +13,7 @@ create table novelList
   novel_origin varchar(80) not null,
   novel_origin_url varchar(180) not null,
   novel_desciption varchar(1500) not null,
+  novel_price varchar(20) not null,
   novel_class varchar(50) not null,
   novel_process char(10) not null,
   primary key(novel_id),

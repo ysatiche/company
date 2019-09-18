@@ -4,11 +4,16 @@ import (
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/recover"
   "github.com/kataras/iris/middleware/logger"
-  "noverScratch-go/route"
+	"noverScratch-go/route"
+	"github.com/iris-contrib/middleware/cors"
 )
 
 func main() {
 	app := iris.Default()
+	crs := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3003"},   //允许通过的主机名称
+		AllowCredentials: true,
+	})
 	// Recover middleware recovers from any panics and writes a 500 if there was one.
 	app.Use(recover.New())
 
@@ -32,6 +37,8 @@ func main() {
 			MessageHeaderKeys: []string{"User-Agent"},
 	})
 	app.Use(requestLogger)
+	app.Use(crs)
+	app.AllowMethods(iris.MethodOptions) // <- HERE
 	route.RegisterRoute(app)
 	// app.Get("/ping", func(ctx iris.Context) {
 	// 	ctx.JSON(iris.Map{

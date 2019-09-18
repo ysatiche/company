@@ -18,6 +18,7 @@ from efficientWorker import EfficientWorker
 from novelSqlModel import NovelList, NovelChapter
 from flask_app import GetApp
 import time
+import requests
 app, db = GetApp()
 
 class NoverScratch:
@@ -62,7 +63,11 @@ class NoverScratch:
     novelCoverImgUrl = doc('#getNovelId > div.main-left > div.left-top > div.novelimg > img').attr('src')
     novelOrigin = doc('#getNovelId > div.main-left > div.left-top > div.info > h4:nth-child(4) > a > span').text()
     novelOriginUrl = doc('#getNovelId > div.main-left > div.left-top > div.info > h4:nth-child(4) > a').attr('href')
-    novelDescription = doc('#getNovelId > div.main-right > div.tab > div.tab-con > div.syn').text()
+    novelDescription = doc('#getNovelId > div.main-right > div.tab > div.tab-con > div.syn').text().strip()
+    ss = novelDescription.encode('utf-8')
+    ss = ss.decode()
+    novelDescription = ss.replace('\n','')
+    novelDescription = novelDescription.replace('"', '')
     # print(novelDescription)
     # novelDescription = 'fantacy'
     novelClass = 'fantacy'
@@ -72,9 +77,7 @@ class NoverScratch:
     db.session.add(novelItem)
     db.session.commit()
 
-  def getEachChapterInfo (self, doc, novelId, chapterIndex):
-    chapterText = doc('#chapter46729 > article > div.content').text()
-    chapterName = doc('#chapter46729 > article > h3').text()
+  def getEachChapterInfo (self, novelId, chapterName, chapterIndex, chapterText):
     novelChapter = NovelChapter(novel_id=novelId, chapter_name=chapterName, chapter_content=chapterText, chapter_index=chapterIndex)
     print(novelChapter)
     db.session.add(novelChapter)
@@ -208,7 +211,7 @@ class NoverScratch:
   # @param {link} eg.https://www.biquyun.com/1_1559/
   def writeTotalChapterToTxt (self, link):
     # chapterName = self.getEachChapterLink(link)
-    self.getSpecificTextByChapterLink('https://www.novelspread.com/chapter/coiling-dragon/c-1-early-morning-at-a-township', 'chapterName', 1, 7)
+    self.getSpecificTextByChapterLink('https://www.novelspread.com/chapter/coiling-dragon/c-1-early-morning-at-a-township', 'chapterName', 2, 7)
     thread_num = 5
     try:
       # self.multiThreadGetChapter(thread_num, chapterName)
@@ -220,5 +223,35 @@ class NoverScratch:
       return 'chapterName' + '.txt'
     except IOError:
       return -1
-  
 
+  def getNovelSeriesInfo (self, urlArr):
+    for url in urlArr:
+      self.browser.get(url)
+      html = self.browser.page_source
+      doc = pq(html)
+      self.getNovelInfo(doc)
+
+  def getEachChapterSeriesInfo (self, beginUrl, novel_id, chapter_name):
+    index = 0
+    while beginUrl and index < 20:
+      r = requests.get('https://www.novelspread.com/chapter/' + str(beginUrl))
+      data = r.json()
+      chapter_content = data['data']['chapter_content'].replace('"', '')
+      chapter_title = data['data']['chapter_title']
+      self.getEachChapterInfo(novel_id, chapter_title, index, chapter_content)
+      index = index + 1
+      beginUrl = data['data']['id']
+
+noverScratch = NoverScratch('')
+urlArr = [
+  'https://www.novelspread.com/novel/battling-records-of-the-chosen-one',
+  'https://www.novelspread.com/novel/coiling-dragon',
+  'https://www.novelspread.com/novel/the-ultimate-evolution',
+  'https://www.novelspread.com/novel/martial-god-asura',
+  'https://www.novelspread.com/novel/god-and-devil-world'
+]
+# urlArr = [
+#   'https://www.novelspread.com/novel/battling-records-of-the-chosen-one'
+# ]
+# noverScratch.getNovelSeriesInfo(urlArr)
+noverScratch.getEachChapterSeriesInfo('46729', 2, 'Coiling Dragon')

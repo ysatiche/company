@@ -5,26 +5,50 @@ import (
 	"noverScratch-go/model/novelListModel"
 	"noverScratch-go/redis"
 	"encoding/json"
+	"fmt"
 )
 
 // getNovelInfo
 func GetNovelInfo(ctx iris.Context) {
 	novelId := ctx.FormValue("novelId")
-	queryStr := "select * from novellist where novel_id = " + novel_id
+	queryStr := "select * from novelList where novel_id = " + novelId
 	novel := novelListModel.DbExecString(queryStr)
 	ctx.JSON(iris.Map{
 		"data": novel,
+		"status": 1,
+	})
+}
+
+// get top 5 popalar novel
+func GetTopFivePopularNovel(ctx iris.Context) {
+	queryStr := "select * from novelList"
+	novel := novelListModel.DbExecString(queryStr)
+	fmt.Println(novel)
+	ctx.JSON(iris.Map{
+		"data": novel,
+		"status": 1,
+	})
+}
+
+// get all chapters by novel_id
+func GetNovelAllChapter(ctx iris.Context) {
+	novelId := ctx.FormValue("novelId")
+	queryStr := "select chapter_id, chapter_name, chapter_index from novelChapter where novel_id = " + novelId
+	chapters := novelListModel.DbExecString(queryStr)
+	ctx.JSON(iris.Map{
+		"data": chapters,
+		"status": 1,
 	})
 }
 
 // get each chapter data
 func GetSpecificChapter(ctx iris.Context) {
-	novelId := ctx.FormValue("novelId")
-	chapterIndex := ctx.FormValue("chapterIndex")
-	queryStr := "select * from novelChapter where chapter_index = " + chapterIndex + " and novel_id = " + novel_id
+	chapterId := ctx.FormValue("chapterId")
+	queryStr := "select * from novelChapter where chapter_id = " + chapterId
 	chapter := novelListModel.DbExecString(queryStr)
 	ctx.JSON(iris.Map{
 		"data": chapter,
+		"status": 1,
 	})
 }
 
