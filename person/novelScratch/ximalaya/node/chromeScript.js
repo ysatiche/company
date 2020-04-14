@@ -1,12 +1,12 @@
 
 // 直接放入chrome console中
 // 由于$不能直接用，所以现在console 中申明 let $$ = $
-let idx = 1
+let idx = 2
 
 let savedNum = 30
 
 
-let pageIndexStart = 2 // 注意是在第${pageIndexStart - 1}页的console中运行下面代码
+let pageIndexStart = 21 // 注意是在第${pageIndexStart - 1}页的console中运行下面代码
 let pageIndexEnd = 30
 let timer = null
 

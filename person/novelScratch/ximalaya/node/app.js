@@ -7,8 +7,9 @@ const axios = require('axios')
 let urlMap = new Map()
 let titleArr = []
 // todo 修改起始页 终止页
-let startPageNum = 2
+let startPageNum = 21
 let endPageNum = 30
+
 let savedNum = 0
 const savedOnce = 30 * (endPageNum - startPageNum + 1)
 let failDownloadUrl = []
@@ -31,6 +32,7 @@ app.use(async (ctx) => {
     }
     // 保存url和title到本地json
     let savedData = []
+    console.log(`[sequenceArr.length] ${sequenceArr.length} [savedOnce] ${savedOnce}`)
     if (sequenceArr.length >= savedOnce) {
       for (let i = 0; i < sequenceArr.length; i++) {
         savedData.push({
@@ -89,6 +91,7 @@ async function downloadAudioSync () {
 
 function writeToLocalData (filePath, jsonData) {
   return new Promise((resolve, reject) => {
+    console.log(`[jsonData] ${jsonData.length}`)
     // 存在的话暂时先不删除
     // if (fs.pathExistsSync(filePath)) {
       // resolve(true)

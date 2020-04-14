@@ -23,25 +23,43 @@ type AudioInfo struct {
 }
 
 const (
-  startPageNum = 7
+  startPageNum = 21
 )
 
 
 func main () {
   t1 := time.Now()
   audioArr := readJson("./test1.json")
-  failArr := make([]AudioInfo, len(audioArr), len(audioArr))
-  copy(failArr, audioArr)
+  var failArr []AudioInfo
+  // failArr := make([]AudioInfo, len(audioArr), len(audioArr))
+  // copy(failArr, audioArr)
   // 循环下载 针对文件下载失败情况
-  for {
-    if int(len(failArr) * 15) < len(audioArr)  {
-      fmt.Println("文件下载失败列表:")
-      for i:=0; i < len(failArr);i++ {
-        fmt.Println(failArr[i].TITLE)
+  // for {
+  //   if len(failArr) < len(audioArr) {
+  //     fmt.Println("文件下载失败列表:")
+  //     for i:=0; i < len(failArr);i++ {
+  //       fmt.Println(failArr[i].TITLE)
+  //     }
+  //   }
+  //   if int(len(failArr) * 15) < len(audioArr)  {
+  //     break
+  //   }
+  //   failArr = ConcurrencyDownload(audioArr)
+  // }
+  for i := 0; i < int(len(audioArr) / 30);i++ {
+    start := i * 30
+    end := (i + 1) * 30
+    arr := ConcurrencyDownload(audioArr[start:end])
+    failArr = append(failArr, arr...)
+    if len(arr) > 0 {
+      fmt.Println("本轮下载结束，失败列表总个数:", len(arr))
+      for j := 0; j < len(arr); j++ {
+        fmt.Println(arr[j].TITLE)
       }
-      break
     }
-    failArr = ConcurrencyDownload(audioArr[:5])
+  }
+  if len(failArr) == 0 {
+    fmt.Println("全部文件下载成功！")
   }
   elapsed := time.Since(t1)
   fmt.Println("下载文件所有时间: ", elapsed)
@@ -95,7 +113,7 @@ func ConcurrencyDownload (arr []AudioInfo) []AudioInfo {
 
   //超过两分钟，没有结果 ---> 结束
   select {
-    case <-time.After(1200 * time.Second):
+    case <-time.After(3600 * time.Second):
       close(ch)
       fmt.Println("time out")
     case <-ov:
@@ -133,7 +151,6 @@ func DownloadAudio (filename string, url string, idx int) int {
       return idx
     }
   }
-  return -1
   file, err := os.Create(audioPath)
   wt := bufio.NewWriter(file)
   if err != nil {
@@ -142,9 +159,9 @@ func DownloadAudio (filename string, url string, idx int) int {
   defer file.Close()
 
   // write the body to file
-  n, err := io.Copy(file, resp.Body)
-  fmt.Println(filename)
-  fmt.Println("[file size]", n)
+  _, err = io.Copy(file, resp.Body)
+  // fmt.Println(filename)
+  // fmt.Println("[file size]", n)
   if err != nil {
     return idx
   }
