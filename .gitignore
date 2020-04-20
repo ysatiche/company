@@ -6,3 +6,10 @@
 *.csv
 tal/blackboard/recognizeShape/blackboard-shape/node_modules/
 tal/blackboard/recognizeShape/blackboard-shape/*.json
+tal/blackboard/canvas/canvas-node/node_modules/
+tal/blackboard/canvas/canvas-node/*.js
+tal/blackboard/canvas/canvas-node/dist/
+tal/blackboard/canvas/canvas-node/elements/*.js
+tal/blackboard/canvas/canvas-node/elements/*/*.js
+person/novelScratch/ximalaya/node/*.json
+person/novelScratch/ximalaya/node/node_modules/
