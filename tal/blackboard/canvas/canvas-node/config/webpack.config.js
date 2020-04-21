@@ -1,5 +1,6 @@
 module.exports = {
-  entry: '../HandWritting.js',
+  target: 'node',
+  entry: '../index.js',
   module: {
     rules: [
       {

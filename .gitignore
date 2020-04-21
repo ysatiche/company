@@ -11,5 +11,7 @@ tal/blackboard/canvas/canvas-node/*.js
 tal/blackboard/canvas/canvas-node/dist/
 tal/blackboard/canvas/canvas-node/elements/*.js
 tal/blackboard/canvas/canvas-node/elements/*/*.js
+tal/blackboard/canvas/canvas-node/plugins/*/*.js
+tal/blackboard/canvas/canvas-node/plugins/*.js
 person/novelScratch/ximalaya/node/*.json
 person/novelScratch/ximalaya/node/node_modules/

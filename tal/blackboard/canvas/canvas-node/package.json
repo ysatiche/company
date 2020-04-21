@@ -2,16 +2,18 @@
   "name": "canvas-node",
   "version": "1.0.0",
   "description": "",
-  "main": "HandWritting.ts",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc HandWritting.ts && webpack --config ./config/webpack.config.js HandWritting.ts --color --progress"
+    "start": "tsc index.ts && webpack --config ./config/webpack.config.js index.ts --color --progress"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@babel/core": "^7.9.0",
+    "@types/fs-extra": "^8.1.0",
     "babel-loader": "^8.1.0",
+    "fs-extra": "^9.0.0",
     "ts-loader": "^7.0.0",
     "typescript": "^3.8.3",
     "webpack": "^4.42.1",

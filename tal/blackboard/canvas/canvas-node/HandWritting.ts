@@ -1,8 +1,15 @@
+// declare var require: any
 import ElementBase from './elements/element-base'
 import Pen from './elements/pen/index'
 import Eraser from './elements/eraser/index'
 import ChoosePen from './elements/choose-pen/index'
 import Helper from './Helper'
+
+interface PluginMap {
+  [x: string]: ElementBase
+}
+
+const basicType: Array<string> = ['elementBase', 'pen', 'eraser']
 
 class HandWritting {
   private eles: Array<ElementBase>
@@ -21,6 +28,10 @@ class HandWritting {
   private helper: Helper
   private scale: number
   private gpuEnable: boolean
+  private pluginsMap: any
+  public onStartWriting: Function
+  public onWriting: Function
+  public onEndWriting: Function
 
   constructor (canvasid: string, canvastemp: string) {
     this.eles = [] // 当前页画布元素集合
@@ -29,12 +40,15 @@ class HandWritting {
     this.preRender = 0 // 画笔上一次渲染时间
     this.isRendering = false // 当前帧是否正在渲染
     this.touches = [] // 当前存在的触点
-    this.status = 'pen' // 最终状态
+    this.status = 'magic-pen' // 最终状态
     this.helper = new Helper()
     this.enableRender = false
     this.scale = 1 // 缩放
     this.historyIndex = -1 // 当前页撤销回退坐标
     this.gpuEnable = false // gpu是否满足要求
+    this.helper.loadModulesInBrowser(['magic-pen']).then((modules) => {
+      this.pluginsMap = modules
+    })
 
     /* 主画布 */
     this.canv = <HTMLCanvasElement> document.getElementById(canvasid)
@@ -49,6 +63,11 @@ class HandWritting {
     this.canvTemp = <HTMLCanvasElement> document.getElementById(canvastemp)
     this.ctxTemp = <CanvasRenderingContext2D> this.canvTemp.getContext('2d')
     this.ctxTemp.imageSmoothingEnabled = false
+
+    /* 对外事件函数 */
+    this.onStartWriting = () => {} // 下笔开始回调
+    this.onWriting = () => {} // 笔记过程中
+    this.onEndWriting = () => {} // 笔记结束回调
 
     /* 开启画布渲染 */
     this.startRender()
@@ -81,12 +100,18 @@ class HandWritting {
       return
     }
     for (let ele of this.elesActive) {
-      if (ele.getType() === 'choose-pen') {
+      const curType = ele.getType()
+      if (curType === 'choose-pen' || (!this.judgeTypeIsInBasicType(curType) && ele.getCtxconfig().renderCtx === 'ctxTemp')) {
         ele.render(this.ctxTemp)
         continue
       }
       ele.render(this.ctx)
     }
+  }
+
+  // 判断当前类型是不是在基本类型中
+  judgeTypeIsInBasicType (type: string) {
+    return (basicType.indexOf(type) >= 0)
   }
 
   drawBegin (event: PointerEvent) {
@@ -104,6 +129,9 @@ class HandWritting {
         break
       default:
         break
+    }
+    if (this.pluginsMap[this.status]) {
+      ele = new this.pluginsMap[this.status].default()
     }
     this.addElement(ele, event.pointerId)
     ele.drawBegin(event)
@@ -160,7 +188,7 @@ class HandWritting {
     ctx.clearRect(0, 0, canv.width / this.scale, canv.height / this.scale)
   }
 
-  addElement (ele: ElementBase, pointerId: number, config?: object) { // 为当前页添加一个笔记元素
+  addElement (ele: any, pointerId: number, config?: object) { // 为当前页添加一个笔记元素
     if (this.historyIndex >= -1) {
       this.eles.splice(this.historyIndex + 1)
     }
@@ -198,18 +226,36 @@ class HandWritting {
   }
 
   drawEnd (event: PointerEvent) {
+    if (this.elesActive.length < 1) return
     this.enableRender = false
-    for (let ele of this.elesActive) {
-      if (ele.getID() === event.pointerId) {
-        ele.drawEnd(event)
+    let drawEndData:any = {}
+    if (this.elesActive.length > 1) {
+      for (let ele of this.elesActive) {
+        if (ele.getID() === event.pointerId) {
+          ele.drawEnd(event)
+        }
+      }
+    } else {
+      const type = this.elesActive[0].getType()
+      const activeEle = this.elesActive[0]
+      // 假如是圈选笔记
+      if (type === 'choose-pen') {
+        drawEndData = this.handleChoosePen(activeEle)
+        this.clear(this.ctxTemp, this.canvTemp)
+      }
+      // 如果是插件
+      if (this.pluginsMap[type]) {
+        drawEndData = activeEle.drawEnd(event)
+        // 如果配置成插件绘制后要删去
+        if (!activeEle.getCtxconfig().saveCtx) {
+          if (activeEle.getCtxconfig().renderCtx === 'ctxTemp') {
+            this.clear(this.ctxTemp, this.canvTemp)
+          }
+          this.popElement()
+        }
       }
     }
-    // 假如是圈选笔记
-    if (this.elesActive.length === 1 && this.elesActive[0].getType() === 'choose-pen') {
-      const choosedData = this.handleChoosePen(this.elesActive[0])
-      this.clear(this.ctxTemp, this.canvTemp)
-      console.warn('choosedData:', choosedData)
-    }
+    this.onEndWriting(drawEndData)
     this.elesActive = []
   }
 
@@ -251,5 +297,13 @@ class HandWritting {
     }
     return { choosedElesArr }
   }
+
+  // plugins api
+  loadPlugin (name: string, module: any) {
+    if (!this.pluginsMap[name]) {
+      this.pluginsMap[name] = module
+    }
+  }
 }
-new HandWritting('canvasId', 'canvasTmpId')
+// new HandWritting('canvasId', 'canvasTmpId')
+export default HandWritting

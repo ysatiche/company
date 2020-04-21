@@ -1,9 +1,63 @@
-import Point from './point'
-import Helper from '../Helper'
+
+interface RectContainer {
+  left: number
+  right: number
+  bottom: number
+  top: number
+}
+
+class Point {
+    public x: number
+    public y: number
+    public pressure: any
+  
+    constructor (x: number, y: number, pressure?: any) {
+      this.x = x // x坐标
+      this.y = y // y坐标
+      this.pressure = pressure
+    }
+  }
+
+class Helper {
+  
+  /*
+    判断两个方框是否相交
+  */
+  isRectOverlap (r1: RectContainer, r2: RectContainer) {
+    if (!r1 || !r2) return false
+    return !(((r1.right < r2.left) || (r1.bottom < r2.top)) || ((r2.right < r1.left) || (r2.bottom < r1.top)))
+  }
+
+  /*
+    判断点是否在方框里
+  */
+  isPointInRect (point: Point, r: RectContainer) {
+    return ((point.x >= r.left) && (point.x <= r.right) && (point.y >= r.top) && (point.y <= r.bottom))
+  }
+
+  /*
+    获取矩阵变换后的点坐标
+  */
+  transformPoint (p: Point, t: any, ignoreOffset?: boolean): Point {
+    
+    if (ignoreOffset) {
+      return new Point(t[0] * p.x + t[2] * p.y, t[1] * p.x + t[3] * p.y)
+    }
+    return new Point(t[0] * p.x + t[2] * p.y + t[4], t[1] * p.x + t[3] * p.y + t[5])
+  }
+}
 
 interface Config {
   [x: string]: any
 }
+
+interface RectContainer {
+  left: number
+  right: number
+  bottom: number
+  top: number
+}
+
 
 interface RectContainer {
   left: number
