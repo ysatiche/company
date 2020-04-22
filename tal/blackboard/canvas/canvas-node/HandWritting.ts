@@ -4,6 +4,7 @@ import Pen from './elements/pen/index'
 import Eraser from './elements/eraser/index'
 import ChoosePen from './elements/choose-pen/index'
 import Helper from './Helper'
+import ControlGroup from './elements/control/control-group'
 
 interface PluginMap {
   [x: string]: ElementBase
@@ -32,6 +33,8 @@ class HandWritting {
   public onStartWriting: Function
   public onWriting: Function
   public onEndWriting: Function
+  private controlGroupShow: boolean
+  private controlGroup: any
 
   constructor (canvasid: string, canvastemp: string) {
     this.eles = [] // 当前页画布元素集合
@@ -40,15 +43,17 @@ class HandWritting {
     this.preRender = 0 // 画笔上一次渲染时间
     this.isRendering = false // 当前帧是否正在渲染
     this.touches = [] // 当前存在的触点
-    this.status = 'magic-pen' // 最终状态
+    this.status = 'pen' // 最终状态
     this.helper = new Helper()
     this.enableRender = false
     this.scale = 1 // 缩放
+    this.controlGroupShow = false // 是否显示control
     this.historyIndex = -1 // 当前页撤销回退坐标
     this.gpuEnable = false // gpu是否满足要求
     this.helper.loadModulesInBrowser(['magic-pen']).then((modules) => {
       this.pluginsMap = modules
     })
+    this.controlGroup = null
 
     /* 主画布 */
     this.canv = <HTMLCanvasElement> document.getElementById(canvasid)
@@ -71,6 +76,11 @@ class HandWritting {
 
     /* 开启画布渲染 */
     this.startRender()
+
+    // todo
+    setTimeout(() => {
+      this.status = 'choose-pen'
+    }, 4000)
   }
 
   startRender () {
@@ -99,6 +109,19 @@ class HandWritting {
     if (this.elesActive.length === 0 || !this.enableRender) {
       return
     }
+    // 如果有control存在，则先获取变化矩阵
+    let matrixObj:any = null
+    if (this.status === 'choose-pen' && this.controlGroupShow) {
+      matrixObj = this.controlGroup.getMatrixObj()
+      console.log('this.elesActive:', this.elesActive)
+      if (matrixObj) {
+        for (let ele of this.elesActive) {
+          ele.updateMatrix(matrixObj)
+        }
+      }
+      this.renderByData()
+      return
+    }
     for (let ele of this.elesActive) {
       const curType = ele.getType()
       if (curType === 'choose-pen' || (!this.judgeTypeIsInBasicType(curType) && ele.getCtxconfig().renderCtx === 'ctxTemp')) {
@@ -116,7 +139,17 @@ class HandWritting {
 
   drawBegin (event: PointerEvent) {
     this.enableRender = true
+    // 判断是否处于 control 面板中 todo
+    if (this.controlGroupShow && this.status === 'choose-pen') {
+      if (!(this.controlGroup && this.controlGroup.drawBegin(event))) {
+        this.controlGroupShow = false
+        this.controlGroup = null
+        // todo 从画布中删除 control 
+      }
+      return
+    }
     let ele: ElementBase = new ElementBase()
+    // console.log(`[drawBegin] ${this.status}`)
     switch (this.status) {
       case 'pen':
         ele = new Pen()
@@ -179,6 +212,7 @@ class HandWritting {
       for (let i = 0; i < this.historyIndex + 1; i++) {
         let ele = this.eles[i]
         if (!ele || !ele.isFinish()) continue
+        ele.resetStartIndex()
         ele.render(this.ctx)
       }
     }
@@ -188,13 +222,13 @@ class HandWritting {
     ctx.clearRect(0, 0, canv.width / this.scale, canv.height / this.scale)
   }
 
-  addElement (ele: any, pointerId: number, config?: object) { // 为当前页添加一个笔记元素
+  addElement (ele: any, pointerId?: number, config?: object) { // 为当前页添加一个笔记元素
     if (this.historyIndex >= -1) {
       this.eles.splice(this.historyIndex + 1)
     }
     this.eles.push(ele)
     this.historyIndex = this.eles.length - 1
-    ele.setEleId(pointerId)
+    ele.setEleId(pointerId ? pointerId : 1)
     if (config) {
       ele.setConfig(config)
     }
@@ -218,6 +252,12 @@ class HandWritting {
   }
 
   drawing (event: PointerEvent) {
+    if (!this.enableRender) return
+    // 判断是否处于 control 面板中 todo
+    if (this.controlGroupShow) {
+      this.controlGroup.drawing(event)
+      return
+    }
     for (let ele of this.elesActive) {
       if (ele.getID() === event.pointerId) {
         ele.drawing(event)
@@ -235,6 +275,7 @@ class HandWritting {
           ele.drawEnd(event)
         }
       }
+      this.elesActive = []
     } else {
       const type = this.elesActive[0].getType()
       const activeEle = this.elesActive[0]
@@ -242,6 +283,25 @@ class HandWritting {
       if (type === 'choose-pen') {
         drawEndData = this.handleChoosePen(activeEle)
         this.clear(this.ctxTemp, this.canvTemp)
+        this.elesActive = []
+        // 如果有圈选到笔记,显示control外框
+        if (drawEndData.length > 0) {
+          let totalContainer = drawEndData[0].ele.getRectContainer()
+          drawEndData.forEach((obj:{ele: ElementBase, index: number}) => {
+            // this.elesActive.push(obj.ele)
+            this.addElement(obj.ele)
+            totalContainer = this.helper.getOuterTogether(totalContainer, obj.ele.getRectContainer())
+          })
+          // get control pos
+          let centerX = (totalContainer.left + totalContainer.right) / 2
+          let centerY = (totalContainer.top + totalContainer.bottom) / 2
+          let width = totalContainer.right - totalContainer.left
+          let height = totalContainer.bottom - totalContainer.top
+          // console.log('pos::', { centerX, centerY, width, height })
+          this.controlGroup = new ControlGroup({ centerX, centerY, width, height })
+          this.addElement(this.controlGroup)
+          this.controlGroupShow = true
+        }
       }
       // 如果是插件
       if (this.pluginsMap[type]) {
@@ -253,10 +313,10 @@ class HandWritting {
           }
           this.popElement()
         }
+        this.elesActive = []
       }
     }
     this.onEndWriting(drawEndData)
-    this.elesActive = []
   }
 
   handleChoosePen (ele: ElementBase): any {
@@ -295,7 +355,7 @@ class HandWritting {
         }
       }
     }
-    return { choosedElesArr }
+    return choosedElesArr
   }
 
   // plugins api

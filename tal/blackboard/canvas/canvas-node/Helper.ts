@@ -1,5 +1,6 @@
 "use strict";
 import Point from "./elements/point"
+import { runInContext } from "vm";
 // import * as fs from "fs-extra"
 
 interface RectContainer {
@@ -9,14 +10,62 @@ interface RectContainer {
   top: number
 }
 
-class Helper {
-  constructor () {
+// 自定义样式
+interface CustomStyle {
+  [x: string]: any
+}
 
+class Helper {
+  private PiBy180: number
+  private PiBy2: number
+  constructor () {
+    this.PiBy180 = Math.PI / 180
+    this.PiBy2 = Math.PI / 2
   }
 
   /**
    * 数学相关函数
    */
+
+   /*
+    弧度 转 角度
+  */
+  radiansToDegrees (radians: number) {
+    return radians / this.PiBy180
+  }
+  cos (radians: number) {
+    if (radians === 0) { return 1 }
+    if (radians < 0) {
+      radians = -radians
+    }
+    let angleSlice = radians / this.PiBy2
+    switch (angleSlice) {
+      case 1:
+      case 3:
+        return 0
+      case 2:
+        return -1
+    }
+    return Math.cos(radians)
+  }
+  sin (radians: number) {
+    let PiBy2 = Math.PI / 2
+    if (radians === 0) { return 0 }
+    let angleSlice = radians / PiBy2
+    let sign = 1
+    if (radians < 0) {
+      sign = -1
+    }
+    switch (angleSlice) {
+      case 1:
+        return sign
+      case 2:
+        return 0
+      case 3:
+        return -sign
+    }
+    return Math.sin(radians)
+  }
   
   /*
     判断两个方框是否相交
@@ -26,11 +75,58 @@ class Helper {
     return !(((r1.right < r2.left) || (r1.bottom < r2.top)) || ((r2.right < r1.left) || (r2.bottom < r1.top)))
   }
 
+  /**
+   * 获取两个外方框到并集
+   */
+  getOuterTogether (r1: RectContainer, r2: RectContainer): RectContainer{
+    return {
+      left: r1.left < r2.left ? r1.left : r2.left,
+      right: r1.right < r2.right ? r2.right : r1.right,
+      top: r1.top < r2.top ? r1.top : r2.top,
+      bottom: r1.bottom < r2.bottom ? r2.bottom : r1.bottom,
+    }
+  }
+
   /*
     判断点是否在方框里
   */
   isPointInRect (point: Point, r: RectContainer) {
     return ((point.x >= r.left) && (point.x <= r.right) && (point.y >= r.top) && (point.y <= r.bottom))
+  }
+
+  /*
+    旋转矩阵
+  */
+  calcRotateMatrix (radians = 0) {
+    let cos = this.cos(radians)
+    let sin = this.sin(radians)
+    return [cos, sin, -sin, cos, 0, 0]
+  }
+  /*
+    平移矩阵
+  */
+  calcTranslateMatrix (x = 0, y = 0) {
+    return [1, 0, 0, 1, x, y]
+  }
+  /*
+    缩放矩阵
+  */
+  calcScaleMatrix (scaleX = 1, scaleY = 1) {
+    return [scaleX, 0, 0, scaleY, 0, 0]
+  }
+
+  /*
+    矩阵叠加 a * b
+  */
+  multiplyTransformMatrices (a: Array<number>, b:Array<number>) {
+    return [
+      a[0] * b[0] + a[2] * b[1],
+      a[1] * b[0] + a[3] * b[1],
+      a[0] * b[2] + a[2] * b[3],
+      a[1] * b[2] + a[3] * b[3],
+      a[0] * b[4] + a[2] * b[5] + a[4],
+      a[1] * b[4] + a[3] * b[5] + a[5]
+    ]
   }
 
   /*
@@ -120,6 +216,60 @@ class Helper {
         resolve(false)
       })
     })
+  }
+  // 画圆
+  renderCircleControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, styleOverride?: CustomStyle) {
+    const defaultStyle = {
+      color: '#999999',
+      methodName: 'stroke',
+      dashed: true
+    }
+    styleOverride = styleOverride || defaultStyle
+    ctx.strokeStyle = styleOverride.color
+    if (styleOverride.dashed) {
+      ctx.setLineDash([6, 6])
+    }
+    ctx.lineWidth = 1
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false)
+    switch(styleOverride.methodName) {
+      case 'stroke':
+        ctx.stroke()
+        break
+      case 'fill':
+        ctx.fill()
+        break
+      default:
+        ctx.stroke()
+    }
+  }
+
+  // 画方
+  renderSquareControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, width: number, height: number, styleOverride?: CustomStyle) {
+    const defaultStyle = {
+      color: '#999999',
+      methodName: 'stroke',
+      dashed: true
+    }
+    styleOverride = styleOverride || defaultStyle
+    ctx.strokeStyle = styleOverride.color
+    if (styleOverride.dashed) {
+      ctx.setLineDash([6, 6])
+    }
+    ctx.lineWidth = 1
+    ctx.beginPath();
+    let left = centerX - width / 2
+    let top = centerY - height / 2
+    switch(styleOverride.methodName) {
+      case 'stroke':
+        ctx.strokeRect(left, top, width, height)
+        break
+      case 'fill':
+        ctx.fillRect(left, top, width, height)
+        break
+      default:
+        ctx.strokeRect(left, top, width, height)
+    }
   }
 }
 

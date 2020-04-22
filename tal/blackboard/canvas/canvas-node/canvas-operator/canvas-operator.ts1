@@ -1,0 +1,42 @@
+
+// import baseCss from './index.module.css'
+/**
+ * 画布操作框 移动 旋转 缩放
+ * @method show 显示画布操作框
+ * @method hide 隐藏画布操作框
+ * @method 
+ */
+
+interface Pos {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+class CanvasOperator {
+  constructor () {
+  this.createOperator()
+  }
+
+  createOperator () {
+    let canvasOperatorElements = `
+    <div id="shape-control-content" tabindex="0">
+
+    </div>
+  `
+    let div = document.createElement('div')
+    div.innerHTML = canvasOperatorElements
+    document.getElementsByTagName('body')[0].appendChild(div)
+  }
+
+  show (pos: Pos) {
+
+  }
+
+  hide () {
+
+  }
+}
+
+export default CanvasOperator
