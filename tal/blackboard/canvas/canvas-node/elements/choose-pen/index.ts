@@ -8,7 +8,7 @@ class ChoosePen extends ElementBase {
 
   _render (ctx: CanvasRenderingContext2D): boolean {
     ctx.save()
-    ctx.strokeStyle = "rgba(255,165,0,1)"
+    ctx.strokeStyle = "rgba(25,65,0,1)"
     ctx.setLineDash([6, 6])
     return super._render(ctx)
   }

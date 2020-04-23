@@ -26,21 +26,49 @@
 
 # TODO LIST
 
-- ts文件怎么批量导入某一文件夹下所有的文件模块
+- ts文件怎么批量导入某一文件夹下所有的文件模块 [done]
 
 使用 fs 相关 api 参考 helper 中的方法
 
-- 怎么传入工厂方法给 handWritting.ts 来构造
+- 怎么传入工厂方法给 handWritting.ts 来构造 [done]
 
 参考 helper中的方法
 
-- 是否需要定义 .d.ts 来申明interface class等
+- 是否需要定义 .d.ts 来申明interface class等 [delay]
 
-- 移动缩放等功能
+- 移动缩放等功能 [todo]
 
 drawend时触发编辑外框，通过对外框的几个点 绑定 dragstart, dragmove等事件，来不断触发 activeEles 的重新渲染
 
 如何解决频繁渲染引起的卡顿？？
+
+- 优化 drawend 代码
+
+回调函数
+drawbegin
+drawing
+drawend
+render
+ispointinpath
+control(move,scale,ratate)
+
+
+drawend 代码：
+判断是否在 control 下，
+
+
+
+- 优化 elesActive eles 代码
+
+画布元素列表三种：
+基础元素（pen，eraser)
+选择元素（choose-pen，control）
+插件元素（magic-pen等）
+
+
+eles: 所有元素储存 必需
+
+elesActive 当前活动点元素，必需 一般情况只有一个画布元素是 active，只有圈选的时候才会出现多个
 
 
 

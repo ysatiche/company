@@ -23,6 +23,7 @@ class ControlGroup extends ElementBase{
     this.type = 'control-group'
     this.defaultControls = createControls(pos)
     this.setControlPos(pos)
+    this.finish = true
   }
 
   // 设置位置
@@ -59,7 +60,7 @@ class ControlGroup extends ElementBase{
   }
 
   drawing (event: PointerEvent): any {
-    this.finish = false
+    // this.finish = false
     let curPoint = this._getPoint(event)
     this._addPoint(curPoint)
     // if (this.activeControl) {
@@ -85,12 +86,11 @@ class ControlGroup extends ElementBase{
 
   // render
   _render (ctx: CanvasRenderingContext2D):any {
-    if (this.finish) return
+    // if (this.finish) return
     for (let i = 0; i < Object.keys(this.defaultControls).length; i++) {
       let key = Object.keys(this.defaultControls)[i]
       this.defaultControls[key]._render(ctx)
     }
-    this.finish = true
   }
 
   // 获取点是否在控制面板中

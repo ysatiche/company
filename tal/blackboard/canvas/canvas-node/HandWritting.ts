@@ -79,7 +79,7 @@ class HandWritting {
 
     // todo
     setTimeout(() => {
-      this.status = 'choose-pen'
+      // this.status = 'choose-pen'
     }, 4000)
   }
 
@@ -149,7 +149,7 @@ class HandWritting {
       return
     }
     let ele: ElementBase = new ElementBase()
-    // console.log(`[drawBegin] ${this.status}`)
+    console.log(`[drawBegin] ${this.status} [this.this.elesActive] ${this.elesActive}`)
     switch (this.status) {
       case 'pen':
         ele = new Pen()
@@ -209,9 +209,10 @@ class HandWritting {
   renderByData (): void {
     this.clear(this.ctx, this.canv)
     if (this.historyIndex >= 0) {
+      // console.log('this.historyIndex + 1:', this.historyIndex + 1)
       for (let i = 0; i < this.historyIndex + 1; i++) {
         let ele = this.eles[i]
-        if (!ele || !ele.isFinish()) continue
+        if (!ele || !ele.isFinish() || ele.getType() === 'choose-pen') continue
         ele.resetStartIndex()
         ele.render(this.ctx)
       }
@@ -253,11 +254,13 @@ class HandWritting {
 
   drawing (event: PointerEvent) {
     if (!this.enableRender) return
+    // console.log(`[drawing] ${this.status}`)
     // 判断是否处于 control 面板中 todo
     if (this.controlGroupShow) {
       this.controlGroup.drawing(event)
       return
     }
+    // console.warn('this.elesActive:', this.elesActive)
     for (let ele of this.elesActive) {
       if (ele.getID() === event.pointerId) {
         ele.drawing(event)
@@ -267,56 +270,62 @@ class HandWritting {
 
   drawEnd (event: PointerEvent) {
     if (this.elesActive.length < 1) return
+    const type = this.status
+    const activeEle = this.elesActive[0]
     this.enableRender = false
     let drawEndData:any = {}
-    if (this.elesActive.length > 1) {
-      for (let ele of this.elesActive) {
-        if (ele.getID() === event.pointerId) {
-          ele.drawEnd(event)
-        }
-      }
-      this.elesActive = []
-    } else {
-      const type = this.elesActive[0].getType()
-      const activeEle = this.elesActive[0]
-      // 假如是圈选笔记
-      if (type === 'choose-pen') {
-        drawEndData = this.handleChoosePen(activeEle)
-        this.clear(this.ctxTemp, this.canvTemp)
-        this.elesActive = []
-        // 如果有圈选到笔记,显示control外框
-        if (drawEndData.length > 0) {
-          let totalContainer = drawEndData[0].ele.getRectContainer()
-          drawEndData.forEach((obj:{ele: ElementBase, index: number}) => {
-            // this.elesActive.push(obj.ele)
-            this.addElement(obj.ele)
-            totalContainer = this.helper.getOuterTogether(totalContainer, obj.ele.getRectContainer())
-          })
-          // get control pos
-          let centerX = (totalContainer.left + totalContainer.right) / 2
-          let centerY = (totalContainer.top + totalContainer.bottom) / 2
-          let width = totalContainer.right - totalContainer.left
-          let height = totalContainer.bottom - totalContainer.top
-          // console.log('pos::', { centerX, centerY, width, height })
-          this.controlGroup = new ControlGroup({ centerX, centerY, width, height })
-          this.addElement(this.controlGroup)
-          this.controlGroupShow = true
-        }
-      }
-      // 如果是插件
-      if (this.pluginsMap[type]) {
-        drawEndData = activeEle.drawEnd(event)
-        // 如果配置成插件绘制后要删去
-        if (!activeEle.getCtxconfig().saveCtx) {
-          if (activeEle.getCtxconfig().renderCtx === 'ctxTemp') {
-            this.clear(this.ctxTemp, this.canvTemp)
+    // 若是在基本类型中
+    if (this.judgeTypeIsInBasicType(type)) {
+      if (this.elesActive.length > 0) {
+        for (let ele of this.elesActive) {
+          if (ele.getID() === event.pointerId) {
+            ele.drawEnd(event)
           }
-          this.popElement()
         }
         this.elesActive = []
       }
     }
+    // 若是在 choose-pen 下
+    if (this.status === 'choose-pen') {
+      // in control
+      if (this.controlGroupShow) {
+
+      } else {
+        // normal choose-pen function
+        drawEndData = this.handleChoosePen(activeEle)
+        this.clear(this.ctxTemp, this.canvTemp)
+        this.elesActive = []
+        // 如果有圈选到笔记,显示control外框
+        if (drawEndData.choosedElesArr.length > 0) {
+          drawEndData.choosedElesArr.forEach((obj:{ele: ElementBase, index: number}) => {
+            this.elesActive.push(obj.ele)
+          })
+          const { centerX, centerY, width, height } = drawEndData.choosedElesOuter
+          this.controlGroup = new ControlGroup({ centerX, centerY, width, height })
+          this.addElement(this.controlGroup)
+          this.controlGroupShow = true
+          this.renderByData()
+        }
+      }
+    }
+    // 如果是插件
+    if (this.pluginsMap[type]) {
+      drawEndData = activeEle.drawEnd(event)
+      // 如果配置成插件绘制后要删去
+      if (!activeEle.getCtxconfig().saveCtx) {
+        if (activeEle.getCtxconfig().renderCtx === 'ctxTemp') {
+          this.clear(this.ctxTemp, this.canvTemp)
+        }
+        this.popElement()
+      }
+      this.elesActive = []
+    }
     this.onEndWriting(drawEndData)
+  }
+
+  // 设置status
+  setStatus (status: string) {
+    this.status = status
   }
 
   handleChoosePen (ele: ElementBase): any {
@@ -355,7 +364,22 @@ class HandWritting {
         }
       }
     }
-    return choosedElesArr
+    let choosedElesOuter: any = {}
+    if (choosedElesArr.length > 0) {
+      let totalContainer = choosedElesArr[0].ele.getRectContainer()
+      choosedElesArr.forEach((obj:{ele: ElementBase, index: number}) => {
+        // this.elesActive.push(obj.ele)
+        this.addElement(obj.ele)
+        totalContainer = this.helper.getOuterTogether(totalContainer, obj.ele.getRectContainer())
+      })
+      // get control pos
+      let centerX = (totalContainer.left + totalContainer.right) / 2
+      let centerY = (totalContainer.top + totalContainer.bottom) / 2
+      let width = totalContainer.right - totalContainer.left
+      let height = totalContainer.bottom - totalContainer.top
+      choosedElesOuter = { centerX, centerY, width, height }
+    }
+    return { choosedElesArr, choosedElesOuter }
   }
 
   // plugins api

@@ -13,5 +13,6 @@ tal/blackboard/canvas/canvas-node/elements/*.js
 tal/blackboard/canvas/canvas-node/elements/*/*.js
 tal/blackboard/canvas/canvas-node/plugins/*/*.js
 tal/blackboard/canvas/canvas-node/plugins/*.js
+tal/blackboard/canvas/canvas-node/canvas-operator/
 person/novelScratch/ximalaya/node/*.json
 person/novelScratch/ximalaya/node/node_modules/
