@@ -1,10 +1,10 @@
-import React from 'react'
-import ReactDOM from 'react-dom'
+// import React from 'react'
+// import ReactDOM from 'react-dom'
 
-class MyComponent extends React.Component {
-  render() {
-    return <div>Hello World</div>
-  }
-}
+// class MyComponent extends React.Component {
+//   render() {
+//     return <div>Hello World</div>
+//   }
+// }
 
-ReactDOM.render(<MyComponent />, document.getElementsByTagName('body')[0])
+// ReactDOM.render(<MyComponent />, document.getElementsByTagName('body')[0])

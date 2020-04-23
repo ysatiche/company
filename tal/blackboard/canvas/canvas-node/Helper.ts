@@ -1,6 +1,6 @@
 "use strict";
 import Point from "./elements/point"
-import { runInContext } from "vm";
+import ElementBase from './elements/element-base'
 // import * as fs from "fs-extra"
 
 interface RectContainer {
@@ -244,6 +244,7 @@ class Helper {
     }
   }
 
+
   // 画方
   renderSquareControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, width: number, height: number, styleOverride?: CustomStyle) {
     const defaultStyle = {
@@ -269,6 +270,60 @@ class Helper {
         break
       default:
         ctx.strokeRect(left, top, width, height)
+    }
+  }
+
+  // 获取点元素的缩略信息
+  getElementBaseInfo (eles: Array<any>):any {
+    if (eles.length === 0) return []
+    let arr:any = []
+    if (eles.length > 0) {
+      eles.forEach((ele) => {
+        arr.push({
+          type: ele.getType(),
+          rectContainer: ele.getRectContainer(),
+          pointsLen: ele.getPointList().length
+        })
+      })
+    }
+    return arr
+  }
+
+  getPenOuterZone (pointList:Array<Point> = []) {
+    if (pointList.length < 1) {
+      return {
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0
+      }
+    }
+    let left = pointList[0].x
+    let right = pointList[0].x
+    let top = pointList[0].y
+    let bottom = pointList[0].y
+    for (let i = 1; i < pointList.length; i++) {
+      if (pointList[i].x < left) {
+        left = pointList[i].x
+      }
+      if (pointList[i].x > right) {
+        right = pointList[i].x
+      }
+      if (pointList[i].y < top) {
+        top = pointList[i].y
+      }
+      if (pointList[i].y > bottom) {
+        bottom = pointList[i].y
+      }
+    }
+    // if (top <= bottom || left <= right) {
+    //   return null
+    // }
+    return {
+      left: left,
+      right: right,
+      top: top,
+      bottom: bottom
     }
   }
 }

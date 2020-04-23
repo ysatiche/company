@@ -124,12 +124,39 @@ class ElementBase {
     return result
   }
 
+  rerender (context: CanvasRenderingContext2D): boolean {
+    this.from = 0
+    this.rectContainer = {
+      left: -1,
+      right: -1,
+      bottom: -1,
+      top: -1
+    }
+    return this.render(context)
+  }
+
   _beginRender (context: CanvasRenderingContext2D) {
     context.save()
     context.transform(this.transformMatrix[0], this.transformMatrix[1], this.transformMatrix[2], this.transformMatrix[3], this.transformMatrix[4], this.transformMatrix[5])
   }
 
   getRectContainer (): RectContainer {
+    // if (this.transformMatrix.join(',') !== [1, 0, 0, 1, 0, 0].join(',')) {
+    //   let lt = this.helper.transformPoint(new Point(this.rectContainer.left, this.rectContainer.top), this.transformMatrix)
+    //   let lb = this.helper.transformPoint(new Point(this.rectContainer.left, this.rectContainer.bottom), this.transformMatrix)
+    //   let rt = this.helper.transformPoint(new Point(this.rectContainer.right, this.rectContainer.top), this.transformMatrix)
+    //   let rb = this.helper.transformPoint(new Point(this.rectContainer.right, this.rectContainer.bottom), this.transformMatrix)
+    //   this.rectContainer = {
+    //     left: -1,
+    //     right: -1,
+    //     bottom: -1,
+    //     top: -1
+    //   }
+    //   this.updateRectContainer(lt)
+    //   this.updateRectContainer(lb)
+    //   this.updateRectContainer(rt)
+    //   this.updateRectContainer(rb)
+    // }
     return this.rectContainer
   }
 
@@ -179,23 +206,17 @@ class ElementBase {
    */
   judgeIsPointInPath (ctx: CanvasRenderingContext2D, chooseZoneInfo: any, scale: number) {
     let calcSteps = 6
-    let preDrawPoints = []
-    if (this.type === 'pen') { // 兼容笔记的内存优化方案
-      let drawPoints = JSON.parse(JSON.stringify(this.pointList))
-      for (let v of drawPoints) {
-        preDrawPoints.push(this.helper.transformPoint(v, this.transformMatrix))
-      }
-    } else {
-      for (let v of this.pointList) {
-        preDrawPoints.push(this.helper.transformPoint(v, this.transformMatrix))
-      }
-    }
-    const info = this.rectContainer
+    const info = this.getRectContainer()
+    console.warn(`[judgeIsPointInPath] [chooseZoneInfo] ${JSON.stringify(chooseZoneInfo)} [this.rectContainer] ${JSON.stringify(info)} [scale] ${scale}`)
     if (this.helper.isRectOverlap(chooseZoneInfo, info)) {
       for (let j = 0; j < this.pointList.length;) {
-        let point = this.pointList[j]
+        // let point = this.pointList[j]
+        let point = this.helper.transformPoint(this.pointList[j], this.transformMatrix)
         // 对旋转，移动，缩放的元素的点进行处理
-        if (this.helper.isPointInRect(this.helper.transformPoint(point, this.transformMatrix), chooseZoneInfo) && ctx.isPointInPath(point.x * scale, point.y * scale)) {
+        let isPointInRect = this.helper.isPointInRect(point, chooseZoneInfo)
+        let isPointInPath = ctx.isPointInPath(point.x * scale, point.y * scale)
+        console.warn(`[judgeIsPointInPath] [isPointInRect] ${isPointInRect} [isPointInPath] ${isPointInPath}`)
+        if (isPointInRect && isPointInPath) {
           return true
         }
         j = j + calcSteps
@@ -218,6 +239,7 @@ class ElementBase {
         ctx.beginPath()
         ctx.moveTo(this.pointList[i].x, this.pointList[i].y)
       } else {
+        this.updateRectContainer(this.helper.transformPoint(this.pointList[i], this.transformMatrix))
         this._renderLineTo(ctx, this.pointList[i])
       }
     }
@@ -240,7 +262,7 @@ class ElementBase {
   _addPoint (point: Point): number {
     if (this._pointFilter(point)) {
       this.pointList.push(point)
-      this.updateRectContainer(point)
+      // this.updateRectContainer(point)
       return this.pointList.length
     } else {
       return -1

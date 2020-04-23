@@ -1,4 +1,5 @@
 import ElementBase from '../element-base'
+import Point from '../point'
 
 class ChoosePen extends ElementBase {
   constructor () {

@@ -42,7 +42,7 @@ drawend时触发编辑外框，通过对外框的几个点 绑定 dragstart, dra
 
 如何解决频繁渲染引起的卡顿？？
 
-- 优化 drawend 代码
+- 优化 drawend 代码 [done]
 
 回调函数
 drawbegin
@@ -53,12 +53,8 @@ ispointinpath
 control(move,scale,ratate)
 
 
-drawend 代码：
-判断是否在 control 下，
 
-
-
-- 优化 elesActive eles 代码
+- 优化 elesActive eles 代码 [done]
 
 画布元素列表三种：
 基础元素（pen，eraser)
@@ -66,9 +62,17 @@ drawend 代码：
 插件元素（magic-pen等）
 
 
-eles: 所有元素储存 必需
+eles: 所有元素储存 必需 (只有在添加和删除元素涉及到)
 
-elesActive 当前活动点元素，必需 一般情况只有一个画布元素是 active，只有圈选的时候才会出现多个
+elesActive 当前活动点元素，必需 一般情况只有一个画布元素是 active，只有圈选的时候才会出现多个（添加和圈选）
+
+- 缩放/旋转/移动 [todo]
+
+rectContainer, pointlist, matrix
+
+choose-pen: rectContainer, pointlist
+
+pen: (rectContainer, pointlist) width matrix
 
 
 
