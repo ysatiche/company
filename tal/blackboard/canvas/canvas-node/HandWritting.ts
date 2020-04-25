@@ -90,7 +90,6 @@ class HandWritting {
     let now = Date.now()
     let delta = now - this.preRender
     let interval = 1000 / 30
-    // let interval = 60000 / 30
     if (!this.isRendering && delta > interval) {
       this.preRender = now - (delta % interval)
       this.isRendering = true
@@ -112,16 +111,12 @@ class HandWritting {
       return
     }
     // console.warn(`[render] [this.elesActive.length] ${this.elesActive.length} [this.controlGroupShow] ${this.controlGroupShow} [this.status] ${this.status}`)
-    // 如果有control存在，则先获取变化矩阵
-    let matrixObj:any = null
+    /**
+     * 如果有control存在，则先获取变化矩阵
+     * TODO
+     * 换成不是每一次render就调用，而是自发的从 control-group 冒出事件来触发重新渲染
+     */
     if (this.status === 'choose-pen' && this.controlGroupShow) {
-      matrixObj = this.controlGroup.getMatrixObj()
-      if (matrixObj) {
-        for (let ele of this.elesActive) {
-          ele.updateMatrix(matrixObj)
-        }
-      }
-      this.renderActiveEles()
       return
     }
     for (let ele of this.elesActive) {
@@ -132,6 +127,18 @@ class HandWritting {
       }
       ele.render(this.ctx)
     }
+  }
+
+  /**
+   * 重新渲染圈选elesactive元素
+   */
+  rerenderElements (matrixObj: any) {
+    if (matrixObj) {
+      for (let ele of this.elesActive) {
+        ele.updateMatrix(matrixObj)
+      }
+    }
+    this.renderActiveEles()
   }
 
   // 判断当前类型是不是在基本类型中
@@ -159,7 +166,6 @@ class HandWritting {
             this.eles.push(ele)
           }
         })
-        // this.popElement()
         this.renderByData()
         this.clear(this.ctxTemp, this.canvTemp)
         this.elesActive = []
@@ -233,14 +239,11 @@ class HandWritting {
     console.warn(`[renderByData] [this.eles.length] ${JSON.stringify(this.helper.getElementBaseInfo(this.eles))}`)
     if (this.eles.length < 1) return
     this.clear(this.ctx, this.canv)
-    // if (this.historyIndex >= 0) {
-      for (let i = 0; i < this.eles.length; i++) {
-      // for (let i = 0; i < this.historyIndex + 1; i++) {
-        let ele = this.eles[i]
-        if (!ele || !ele.isFinish() || ele.getType() === 'choose-pen') continue
-        ele.rerender(this.ctx)
-      }
-    // }
+    for (let i = 0; i < this.eles.length; i++) {
+      let ele = this.eles[i]
+      if (!ele || !ele.isFinish() || ele.getType() === 'choose-pen') continue
+      ele.rerender(this.ctx)
+    }
   }
 
   /**
@@ -250,9 +253,7 @@ class HandWritting {
   renderActiveEles (): void {
     console.warn(`[renderActiveEles] [this.elesActive.length] ${JSON.stringify(this.helper.getElementBaseInfo(this.elesActive))}`)
     if (this.elesActive.length < 1) return
-    // this.clear(this.ctx, this.canv)
     this.clear(this.ctxTemp, this.canvTemp)
-    // console.log('[renderActiveEles] ', this.elesActive)
     for (let i = 0; i < this.elesActive.length; i++) {
       let ele = this.elesActive[i]
       if (!ele || !ele.isFinish() || ele.getType() === 'choose-pen') continue
@@ -266,11 +267,7 @@ class HandWritting {
 
   addElement (ele: any, pointerId?: number, config?: object) { // 为当前页添加一个笔记元素
     // 撤销后重新绘制元素
-    // if (this.historyIndex >= -1) {
-    //   this.eles.splice(this.historyIndex + 1)
-    // }
     this.eles.push(ele)
-    // this.historyIndex = this.eles.length - 1
     ele.setEleId(pointerId ? pointerId : 1)
     if (config) {
       ele.setConfig(config)
@@ -292,7 +289,6 @@ class HandWritting {
   drawing (event: PointerEvent) {
     if (!this.enableRender) return
     // console.warn(`[this.controlGroupShow] ${this.controlGroupShow} [this.elesActive.length] ${this.elesActive.length}`)
-    // 判断是否处于 control 面板中 todo
     if (this.controlGroupShow) {
       this.controlGroup.drawing(event)
       return
@@ -343,6 +339,9 @@ class HandWritting {
           })
           const { centerX, centerY, width, height } = drawEndData.choosedElesOuter
           this.controlGroup = new ControlGroup({ centerX, centerY, width, height })
+          this.controlGroup.rerenderElements = (data:any) => {
+            this.rerenderElements(data)
+          }
           this.elesActive.push(this.controlGroup)
           this.controlGroupShow = true
           this.renderByData()
@@ -441,5 +440,4 @@ class HandWritting {
     }
   }
 }
-// new HandWritting('canvasId', 'canvasTmpId')
 export default HandWritting

@@ -17,7 +17,9 @@ class ControlGroup extends ElementBase{
   private startPoint?: Point
   private activeControl: any
   private controlPos?: ControlPos
-  public renderElements: Function
+  private rerenderPoints: number
+  private rerenderPointsMax: number
+  public rerenderElements: Function
 
   constructor (pos: ControlPos) {
     super()
@@ -25,7 +27,14 @@ class ControlGroup extends ElementBase{
     this.defaultControls = createControls(pos)
     this.setControlPos(pos)
     this.finish = true
-    this.renderElements = () => {}
+    /**
+     * this.rerenderElements 作用
+     * 可以根据 drawing 来判断点的变化是否足以触发一次重新渲染
+     * 暂时以 rerenderPoints 的数量来判断 > rerenderPointsMax就触发一次
+     */
+    this.rerenderElements = () => {}
+    this.rerenderPoints = 0
+    this.rerenderPointsMax = 10
   }
 
   // 设置位置
@@ -65,11 +74,18 @@ class ControlGroup extends ElementBase{
     // this.finish = false
     let curPoint = this._getPoint(event)
     this._addPoint(curPoint)
-    // if (this.activeControl) {
-    //   let transformMatrix = this.activeControl.getActionHandler(event)
-    //   this.translate(transformMatrix)
-    //   return transformMatrix
-    // }
+    /**
+     * 判断点的移动是否足以触发一次 ctxtemp 渲染
+     * 如果是的话，调用 getMatrixObj 然后将结果往上冒
+     */
+    this.rerenderPoints++
+    if (this.rerenderPoints > this.rerenderPointsMax) {
+      this.rerenderPoints = 0
+      const res = this.getMatrixObj()
+      if (res) {
+        this.rerenderElements(res)
+      }
+    }
   }
 
   // get matrix obj

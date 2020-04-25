@@ -141,22 +141,6 @@ class ElementBase {
   }
 
   getRectContainer (): RectContainer {
-    // if (this.transformMatrix.join(',') !== [1, 0, 0, 1, 0, 0].join(',')) {
-    //   let lt = this.helper.transformPoint(new Point(this.rectContainer.left, this.rectContainer.top), this.transformMatrix)
-    //   let lb = this.helper.transformPoint(new Point(this.rectContainer.left, this.rectContainer.bottom), this.transformMatrix)
-    //   let rt = this.helper.transformPoint(new Point(this.rectContainer.right, this.rectContainer.top), this.transformMatrix)
-    //   let rb = this.helper.transformPoint(new Point(this.rectContainer.right, this.rectContainer.bottom), this.transformMatrix)
-    //   this.rectContainer = {
-    //     left: -1,
-    //     right: -1,
-    //     bottom: -1,
-    //     top: -1
-    //   }
-    //   this.updateRectContainer(lt)
-    //   this.updateRectContainer(lb)
-    //   this.updateRectContainer(rt)
-    //   this.updateRectContainer(rb)
-    // }
     return this.rectContainer
   }
 
