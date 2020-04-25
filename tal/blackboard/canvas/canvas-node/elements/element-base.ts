@@ -284,19 +284,14 @@ class ElementBase {
     this.config = cfg
   }
 
-  /**
-   * 操作
-   */
-  translate (translate: {x: number, y: number}) {
-    let translateMatrix = this.helper.calcTranslateMatrix(translate.x, translate.y)
-    this.transformMatrix = this.helper.multiplyTransformMatrices(translateMatrix, this.transformMatrix)
-  }
-
   // 移动/缩放/旋转 等操作更改 matrix
   updateMatrix (matrix: { actionName: string, matrix: any}) {
     switch(matrix.actionName) {
       case 'translate':
-        this.translate(matrix.matrix)
+        this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
+        break
+      case 'scale':
+        this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
         break
       default:
         break

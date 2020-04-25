@@ -9,6 +9,11 @@ interface ControlPos {
   width: number
   height: number
 }
+/**
+ * 在 继承 control.ts 来实现操作组件
+ * 当用户点击焦点处于 controls 范围内，调用该control的getActionHandler
+ * getActionHandler 返回最终生效的变化矩阵，通过rerenderElements传给上层
+ */
 
 class ControlGroup extends ElementBase{
   private defaultControls: {
@@ -25,7 +30,7 @@ class ControlGroup extends ElementBase{
     super()
     this.type = 'control-group'
     this.defaultControls = createControls(pos)
-    this.setControlPos(pos)
+    this.controlPos = pos
     this.finish = true
     /**
      * this.rerenderElements 作用
@@ -38,8 +43,11 @@ class ControlGroup extends ElementBase{
   }
 
   // 设置位置
-  setControlPos (pos: ControlPos) {
-    this.controlPos = pos
+  setTransfromParams (scale: any) {
+    for (let i = 0; i < Object.keys(this.defaultControls).length; i++) {
+      let key = Object.keys(this.defaultControls)[i]
+      this.defaultControls[key].setTransfromParams(scale)
+    }
   }
 
   // 添加control
@@ -90,11 +98,23 @@ class ControlGroup extends ElementBase{
 
   // get matrix obj
   getMatrixObj ():any {
-    // 每次render时计算 移动/缩放/旋转 等结果
+    /**
+     * render时计算 移动/缩放/旋转 等结果
+     */
     if (this.activeControl) {
       if (!this.startPoint) return null
       const end = this.pointList[this.pointList.length - 1]
-      const matrix = this.activeControl.getActionHandler()(this.startPoint, end)
+      const matrix = this.activeControl.getActionHandler()(this.startPoint, end, this.controlPos)
+      /**
+       * 当matrix有返回时，更新中心点
+       * 当返回缩放必要信息时，更新所有control的中心点和width height
+       */
+      // console.warn(`[matrix] [result] ${JSON.stringify(matrix)}`)
+      // if (matrix) {
+      //   if (matrix.actionName === 'scale' && matrix.scale) {
+      //     this.setTransfromParams(matrix.scale)
+      //   }
+      // }
       this.startPoint = end
       return matrix
     } else {
@@ -115,7 +135,7 @@ class ControlGroup extends ElementBase{
   checkPointInControls (point: Point): boolean {
     for (let i = 0; i < Object.keys(this.defaultControls).length; i++) {
       let key = Object.keys(this.defaultControls)[i]
-      if (this.defaultControls[key].checkPointInControl(point)) {
+      if (this.defaultControls[key].checkPointInControl(point, this.transformMatrix)) {
         this.activeControl = this.defaultControls[key]
         return true
       }

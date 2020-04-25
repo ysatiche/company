@@ -12,6 +12,9 @@ interface RectContainer {
 
 // 自定义样式
 interface CustomStyle {
+  methodName: string
+  color: string
+  dashed: boolean
   [x: string]: any
 }
 
@@ -218,14 +221,10 @@ class Helper {
     })
   }
   // 画圆
-  renderCircleControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, styleOverride?: CustomStyle) {
-    const defaultStyle = {
-      color: '#999999',
-      methodName: 'stroke',
-      dashed: true
+  renderCircleControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, styleOverride: CustomStyle) {
+    if (styleOverride.color) {
+      ctx.strokeStyle = styleOverride.color
     }
-    styleOverride = styleOverride || defaultStyle
-    ctx.strokeStyle = styleOverride.color
     if (styleOverride.dashed) {
       ctx.setLineDash([6, 6])
     }
@@ -246,19 +245,15 @@ class Helper {
 
 
   // 画方
-  renderSquareControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, width: number, height: number, styleOverride?: CustomStyle) {
-    const defaultStyle = {
-      color: '#999999',
-      methodName: 'stroke',
-      dashed: true
+  renderSquareControl (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, width: number, height: number, styleOverride: CustomStyle) {
+    if (styleOverride.color) {
+      ctx.strokeStyle = styleOverride.color
     }
-    styleOverride = styleOverride || defaultStyle
-    ctx.strokeStyle = styleOverride.color
     if (styleOverride.dashed) {
       ctx.setLineDash([6, 6])
     }
     ctx.lineWidth = 1
-    ctx.beginPath();
+    ctx.beginPath()
     let left = centerX - width / 2
     let top = centerY - height / 2
     switch(styleOverride.methodName) {
