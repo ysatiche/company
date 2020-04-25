@@ -17,6 +17,7 @@ class ControlGroup extends ElementBase{
   private startPoint?: Point
   private activeControl: any
   private controlPos?: ControlPos
+  public renderElements: Function
 
   constructor (pos: ControlPos) {
     super()
@@ -24,6 +25,7 @@ class ControlGroup extends ElementBase{
     this.defaultControls = createControls(pos)
     this.setControlPos(pos)
     this.finish = true
+    this.renderElements = () => {}
   }
 
   // 设置位置
