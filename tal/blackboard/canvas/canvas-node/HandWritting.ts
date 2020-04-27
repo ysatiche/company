@@ -5,17 +5,17 @@ import Eraser from './elements/eraser/index'
 import ChoosePen from './elements/choose-pen/index'
 import Helper from './Helper'
 import ControlGroup from './elements/control/control-group'
+import Point from './elements/point'
 
 interface PluginMap {
   [x: string]: ElementBase
 }
 
-const basicType: Array<string> = ['elementBase', 'pen', 'eraser']
+const basicType: Array<string> = ['elementBase', 'pen']
 
 class HandWritting {
   private eles: Array<ElementBase>
   private elesActive: Array<ElementBase>
-  private deleteEles: Array<ElementBase>
   private animationFrame: number
   private preRender: number
   private isRendering: boolean
@@ -40,7 +40,6 @@ class HandWritting {
   constructor (canvasid: string, canvastemp: string) {
     this.eles = [] // 当前页显示的画布元素集合
     this.elesActive = [] // 当前激活的元素
-    this.deleteEles = [] // 暂时丢弃的画布元素
     this.animationFrame = 0
     this.preRender = 0 // 画笔上一次渲染时间
     this.isRendering = false // 当前帧是否正在渲染
@@ -236,12 +235,12 @@ class HandWritting {
   }
 
   renderByData (): void {
-    console.warn(`[renderByData] [this.eles.length] ${JSON.stringify(this.helper.getElementBaseInfo(this.eles))}`)
+    console.warn(`[renderByData] [this.eles] ${JSON.stringify(this.helper.getElementBaseInfo(this.eles))}`)
     if (this.eles.length < 1) return
     this.clear(this.ctx, this.canv)
     for (let i = 0; i < this.eles.length; i++) {
       let ele = this.eles[i]
-      if (!ele || !ele.isFinish() || ele.getType() === 'choose-pen') continue
+      if (!ele || ele.getType() === 'choose-pen') continue
       ele.rerender(this.ctx)
     }
   }
@@ -318,8 +317,52 @@ class HandWritting {
         this.elesActive = []
       }
     }
+    /**
+     * 若是在橡皮擦下
+     * drawend 后遍历所有的 this.eles 拆分被橡皮擦作用的直线
+     * TODO isPointInEraserArea 这个是继承类中的方法，不被支持，必须在 ElementBase中 定义
+     */
+    if (type === 'eraser') {
+      for (let i = 0; i < this.eles.length; i++) {
+        let tmpEle = this.eles[i]
+        let tmpArr: Array<ElementBase> = []
+        if (tmpEle.getType() === 'pen' && this.helper.isRectOverlap(tmpEle.getRectContainer(), activeEle.getRectContainer())) {
+          const tmpElePointList = tmpEle.getPointList()
+          let addPointsArr: Array<Point> = []
+          for (let j = 0; j < tmpElePointList.length; j++) {
+            if (activeEle.isPointInEraserArea(tmpElePointList[j]) || j === tmpElePointList.length - 1) {
+              /**
+               * 当此时点在橡皮擦范围内时
+               * 若 addPointsArr.length > 0 说明此前有被添加的点
+               * 所以将这些点 组成一条直线，然后将 addPointsArr = []
+               */
+              if (addPointsArr.length > 0) {
+                tmpArr.push(new Pen(addPointsArr))
+                addPointsArr = []
+              }
+            } else {
+              /**
+               * 当此时点不在橡皮擦范围内时
+               * 将该点添加到 addPointsArr 中
+               */
+              addPointsArr.push(tmpElePointList[j])
+            }
+          }
+        }
+        /**
+         * 如果tmpArr.length>0 将该条直线划成几条小直线
+         * 同时调用 operatorRecorder 进行记录
+         */
+        if (tmpArr.length > 0) {
+          this.eles.splice(i, 1, ...tmpArr)
+        }
+      }
+      this.eles.pop()
+      this.elesActive = []
+      this.renderByData()
+    }
     // 若是在 choose-pen 下
-    if (this.status === 'choose-pen') {
+    if (type === 'choose-pen') {
       // in control
       if (this.controlGroupShow) {
 

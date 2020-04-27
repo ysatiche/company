@@ -33,6 +33,7 @@ class ElementBase {
   protected pointList: Array<Point>
   protected transformMatrix: Array<number>
   private id: number
+  private uuid: string
   protected type: string
   protected finish: boolean
   protected from: number
@@ -40,10 +41,10 @@ class ElementBase {
   protected helper: Helper
   protected ctxConfig: CtxConfig
 
-  constructor () {
+  constructor (pointList?: Array<Point>) {
     // 绘制元素的ID号，用于查找到指定元素
     this.id = -1
-    this.pointList = []
+    this.pointList = pointList ? pointList : []
     // 元素配置
     this.config = {
       lineColor: '#000000',
@@ -54,6 +55,7 @@ class ElementBase {
     this.finish = false
     this.from = 0
     this.helper = new Helper()
+    this.uuid = this.helper.uuidv4()
     this.ctxConfig = {
       renderCtx: 'ctx',
       saveCtx: true
@@ -68,6 +70,10 @@ class ElementBase {
 
   getType (): string {
     return this.type
+  }
+
+  getUuid (): string {
+    return this.uuid
   }
 
   getPointList (): Array<Point> {
@@ -299,6 +305,11 @@ class ElementBase {
       default:
         break
     }
+  }
+
+  // TODO Eraser需要的函数
+  isPointInEraserArea (x: any): any {
+    
   }
 }
 
