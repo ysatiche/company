@@ -42,14 +42,6 @@ class ControlGroup extends ElementBase{
     this.rerenderPointsMax = 10
   }
 
-  // 设置位置
-  setTransfromParams (scale: any) {
-    for (let i = 0; i < Object.keys(this.defaultControls).length; i++) {
-      let key = Object.keys(this.defaultControls)[i]
-      this.defaultControls[key].setTransfromParams(scale)
-    }
-  }
-
   // 添加control
   addControl (name: string, control: Control): boolean {
     if(!this.defaultControls[name]) {
@@ -77,7 +69,7 @@ class ControlGroup extends ElementBase{
     this.startPoint = curPoint
     return this.checkPointInControls(curPoint)
   }
-
+  
   drawing (event: PointerEvent): any {
     // this.finish = false
     let curPoint = this._getPoint(event)
@@ -105,16 +97,6 @@ class ControlGroup extends ElementBase{
       if (!this.startPoint) return null
       const end = this.pointList[this.pointList.length - 1]
       const matrix = this.activeControl.getActionHandler()(this.startPoint, end, this.controlPos)
-      /**
-       * 当matrix有返回时，更新中心点
-       * 当返回缩放必要信息时，更新所有control的中心点和width height
-       */
-      // console.warn(`[matrix] [result] ${JSON.stringify(matrix)}`)
-      // if (matrix) {
-      //   if (matrix.actionName === 'scale' && matrix.scale) {
-      //     this.setTransfromParams(matrix.scale)
-      //   }
-      // }
       this.startPoint = end
       return matrix
     } else {

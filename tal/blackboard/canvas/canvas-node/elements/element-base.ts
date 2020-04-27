@@ -293,6 +293,9 @@ class ElementBase {
       case 'scale':
         this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
         break
+      case 'angle':
+        this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
+        break
       default:
         break
     }

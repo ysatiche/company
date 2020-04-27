@@ -97,6 +97,13 @@ class Helper {
     return ((point.x >= r.left) && (point.x <= r.right) && (point.y >= r.top) && (point.y <= r.bottom))
   }
 
+  /**
+   * 判断点是否在圆中
+   */
+  isPointInCircle (point: Point, centerX: number, centerY: number, radius: number): boolean {
+    return Math.pow(point.x - centerX, 2) + Math.pow(point.y - centerY, 2) < Math.pow(radius, 2)
+  }
+
   /*
     旋转矩阵
   */
@@ -141,6 +148,15 @@ class Helper {
       return new Point(t[0] * p.x + t[2] * p.y, t[1] * p.x + t[3] * p.y)
     }
     return new Point(t[0] * p.x + t[2] * p.y + t[4], t[1] * p.x + t[3] * p.y + t[5])
+  }
+
+  invertTransform (t: Array<number>):Array<number> {
+    var a = 1 / (t[0] * t[3] - t[1] * t[2]),
+        r = [a * t[3], -a * t[1], -a * t[2], a * t[0]],
+        o = this.transformPoint(new Point(t[4], t[5]), r, true);
+    r[4] = -o.x;
+    r[5] = -o.y;
+    return r;
   }
   
 

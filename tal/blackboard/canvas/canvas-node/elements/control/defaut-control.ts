@@ -93,14 +93,33 @@ function scale (scale: { scaleX:  number, scaleY: number}, origin: Point): Matri
   }
 }
 
-// function  angle (angle: number, origin: Point) {
-//   let originMatrixBefore = this.helper.calcTranslateMatrix(origin.x, origin.y)
-//   let originMatrixAfter = this.helper.calcTranslateMatrix(-origin.x, -origin.y)
-//   let angleMatrix = this.helper.calcRotateMatrix(angle)
-//   angleMatrix = this.helper.multiplyTransformMatrices(originMatrixBefore, angleMatrix)
-//   angleMatrix = this.helper.multiplyTransformMatrices(angleMatrix, originMatrixAfter)
-//   this.transformMatrix = this.helper.multiplyTransformMatrices(angleMatrix, this.transformMatrix)
-// }
+function handleAngle (start: Point, end: Point, controlPos: ControlPos):MatrixObj {
+  let center = new Point(controlPos.centerX, controlPos.centerY)
+  let startAngle = getAngle(start, center)
+  let endAngle = getAngle(end, center)
+  let angleIncrement = startAngle - endAngle
+  return angle(angleIncrement, center)
+}
+
+function getAngle (p: Point, center: Point): number { // 获取任一点与中心点构成的水平角度
+  // 以中心点为圆点的参考坐标系，重新计算p点的坐标
+  let x = p.x - center.x
+  let y = center.y - p.y
+  return Math.atan2(y, x)
+}
+
+function  angle (angle: number, origin: Point): MatrixObj {
+  let originMatrixBefore = helper.calcTranslateMatrix(origin.x, origin.y)
+  let originMatrixAfter = helper.calcTranslateMatrix(-origin.x, -origin.y)
+  let angleMatrix = helper.calcRotateMatrix(angle)
+  angleMatrix = helper.multiplyTransformMatrices(originMatrixBefore, angleMatrix)
+  angleMatrix = helper.multiplyTransformMatrices(angleMatrix, originMatrixAfter)
+  return {
+    actionName: 'angle',
+    matrix: angleMatrix
+  }
+  // this.transformMatrix = this.helper.multiplyTransformMatrices(angleMatrix, this.transformMatrix)
+}
 
 
 export default function (pos: ControlPos): {[x: string]: Control} {
@@ -132,6 +151,24 @@ export default function (pos: ControlPos): {[x: string]: Control} {
       },
       name: 'lt',
       actionHandler: handleScaleLeftTop
-    })
+    }),
+    // 中心正上方 旋转
+    'ct': new Control({
+      position: {
+        x: 0,
+        y: -0.5
+      },
+      offset: {
+        offsetX: 0,
+        offsetY: -20
+      },
+      centerPos: pos,
+      actionName: 'rotate',
+      styleOverride: {
+        cornerStyle: 'circle'
+      },
+      name: 'ct',
+      actionHandler: handleAngle
+    }),
   }
 }
