@@ -3,9 +3,10 @@ import ElementBase from './elements/element-base'
 import Pen from './elements/pen/index'
 import Eraser from './elements/eraser/index'
 import ChoosePen from './elements/choose-pen/index'
-import Helper from './Helper'
+import Helper from './libs/Helper'
 import ControlGroup from './elements/control/control-group'
 import Point from './elements/point'
+import OperatorRecorder from './libs/operator-recorder'
 
 interface PluginMap {
   [x: string]: ElementBase
@@ -35,7 +36,9 @@ class HandWritting {
   public onWriting: Function
   public onEndWriting: Function
   private controlGroupShow: boolean
+  private baseLineCount: number
   private controlGroup: any
+  private operatorRecorder: any
 
   constructor (canvasid: string, canvastemp: string) {
     this.eles = [] // 当前页显示的画布元素集合
@@ -51,10 +54,12 @@ class HandWritting {
     this.controlGroupShow = false // 是否显示control
     this.historyIndex = -1 // 当前页撤销回退坐标
     this.gpuEnable = false // gpu是否满足要求
+    this.baseLineCount = 20 // 橡皮擦作用到直线后，将直线划成几个小直线，这个表示小直线拥有的最小点的数量
     this.helper.loadModulesInBrowser(['magic-pen']).then((modules) => {
       this.pluginsMap = modules
     })
     this.controlGroup = null
+    this.operatorRecorder = new OperatorRecorder(this.eles, this.elesActive)
 
     /* 主画布 */
     this.canv = <HTMLCanvasElement> document.getElementById(canvasid)
@@ -112,7 +117,6 @@ class HandWritting {
     // console.warn(`[render] [this.elesActive.length] ${this.elesActive.length} [this.controlGroupShow] ${this.controlGroupShow} [this.status] ${this.status}`)
     /**
      * 如果有control存在，则先获取变化矩阵
-     * TODO
      * 换成不是每一次render就调用，而是自发的从 control-group 冒出事件来触发重新渲染
      */
     if (this.status === 'choose-pen' && this.controlGroupShow) {
@@ -198,46 +202,25 @@ class HandWritting {
     ele.drawBegin(event)
   }
 
-  getRevokeStatus () { // 获取是否可以撤销或者恢复的状态
-    let revokeNext = this.historyIndex > -1
-    let recoveryNext = this.historyIndex < this.eles.length - 1
-    return { revokeNext, recoveryNext }
-  }
-
   revoke (): any { // 撤销
-    if (this.historyIndex === null) {
-      this.historyIndex = this.eles.length - 1
+    const res = this.operatorRecorder.revoke()
+    console.warn(`[revoke][res] ${JSON.stringify(res)}`)
+    if (res.status) {
+      this.renderByData()
     }
-    if (this.historyIndex > -1) {
-      if (!this.eles[this.historyIndex]) {
-        this.historyIndex--
-        return this.revoke()
-      } else {
-        this.historyIndex--
-        this.renderByData()
-      }
-    }
-    return this.getRevokeStatus()
   }
   recovery (): any { // 恢复
-    if (this.historyIndex === null) {
-      this.historyIndex = this.eles.length - 1
+    const res = this.operatorRecorder.recovery()
+    console.warn(`[recovery][res] ${JSON.stringify(res)}`)
+    if (res.status) {
+      this.renderByData()
     }
-    if (this.historyIndex < this.eles.length - 1) {
-      this.historyIndex++
-      if (!this.eles[this.historyIndex]) {
-        return this.recovery()
-      } else {
-        this.renderByData()
-      }
-    }
-    return this.getRevokeStatus()
   }
 
   renderByData (): void {
     console.warn(`[renderByData] [this.eles] ${JSON.stringify(this.helper.getElementBaseInfo(this.eles))}`)
-    if (this.eles.length < 1) return
     this.clear(this.ctx, this.canv)
+    if (this.eles.length < 1) return
     for (let i = 0; i < this.eles.length; i++) {
       let ele = this.eles[i]
       if (!ele || ele.getType() === 'choose-pen') continue
@@ -267,6 +250,10 @@ class HandWritting {
   addElement (ele: any, pointerId?: number, config?: object) { // 为当前页添加一个笔记元素
     // 撤销后重新绘制元素
     this.eles.push(ele)
+    // 添加到历史记录
+    if (ele.getUuid()) {
+      this.operatorRecorder.addOperator(`ADD ID ${ele.getUuid()}`)
+    }
     ele.setEleId(pointerId ? pointerId : 1)
     if (config) {
       ele.setConfig(config)
@@ -299,6 +286,101 @@ class HandWritting {
     }
   }
 
+  /**
+   * choose-pen drawend 处理
+   */
+  choosePenDrawend (activeEle: ElementBase): any {
+    // in control
+    let drawEndData:any = {}
+    if (this.controlGroupShow) {
+
+    } else {
+      drawEndData = this.handleChoosePen(activeEle)
+      /**
+       * 如果圈选到笔记
+       * 将圈选到的笔记放入 ctxtemp 中,同时将 control放入 ctxtemp
+       * 然后同时重新渲染 ctx ctxtemp
+       */
+      this.elesActive = []
+      if (drawEndData.choosedElesArr.length > 0) {
+        drawEndData.choosedElesArr.forEach((index: number) => {
+          let obj: ElementBase = this.eles[index]
+          this.elesActive.push(obj)
+          this.popElement([index])
+        })
+        const { centerX, centerY, width, height } = drawEndData.choosedElesOuter
+        this.controlGroup = new ControlGroup({ centerX, centerY, width, height })
+        this.controlGroup.rerenderElements = (data:any) => {
+          this.rerenderElements(data)
+        }
+        this.elesActive.push(this.controlGroup)
+        this.controlGroupShow = true
+        this.renderByData()
+        this.renderActiveEles()
+      } else {
+        /**
+         * 如果没有圈选笔记 且 不在 control 下
+         * 将圈选笔记的轨迹清楚掉 此时只有ctxtemp画布上有圈选笔记
+         */
+        this.clear(this.ctxTemp, this.canvTemp)
+      }
+    }
+    return drawEndData
+  }
+
+  /**
+   * 橡皮擦 drawend 后的处理
+   */
+  eraserDrawend (activeEle: ElementBase): any {
+    for (let i = 0; i < this.eles.length; i++) {
+      let tmpEle = this.eles[i]
+      let tmpArr: Array<ElementBase> = []
+      if (tmpEle.getType() === 'pen' && this.helper.isRectOverlap(tmpEle.getRectContainer(), activeEle.getRectContainer())) {
+        const tmpElePointList = tmpEle.getPointList()
+        let addPointsArr: Array<Point> = []
+        for (let j = 0; j < tmpElePointList.length; j++) {
+          if (activeEle.isPointInEraserArea(tmpElePointList[j]) || j === tmpElePointList.length - 1) {
+            /**
+             * 当此时点在橡皮擦范围内时
+             * 若 addPointsArr.length > 0 说明此前有被添加的点
+             * 所以将这些点 组成一条直线，然后将 addPointsArr = []
+             */
+            if (addPointsArr.length > 0) {
+              if (addPointsArr.length > this.baseLineCount) {
+                tmpArr.push(new Pen(addPointsArr))
+              }
+              addPointsArr = []
+            }
+          } else {
+            /**
+             * 当此时点不在橡皮擦范围内时
+             * 将该点添加到 addPointsArr 中
+             */
+            addPointsArr.push(tmpElePointList[j])
+          }
+        }
+      }
+      /**
+       * 如果tmpArr.length>0 将该条直线划成几条小直线
+       * 同时调用 operatorRecorder 进行记录
+       */
+      if (tmpArr.length > 0) {
+        this.eles.splice(i, 1, ...tmpArr)
+      }
+    }
+    this.eles.pop()
+    this.elesActive = []
+    this.renderByData()
+    return {
+      type: 'eraser'
+    }
+  }
+
+  /**
+   * drawend
+   * TODO 代码太多 能不能用 策略模式 进行削减
+   * 接口定义(ctx, eles)
+   */
   drawEnd (event: PointerEvent) {
     console.warn(`[DrawEnd] [this.elesActive] ${JSON.stringify(this.helper.getElementBaseInfo(this.elesActive))} [status] ${this.status} [controlGroupShow] ${this.controlGroupShow}`)
     if (this.elesActive.length < 1) return
@@ -323,80 +405,11 @@ class HandWritting {
      * TODO isPointInEraserArea 这个是继承类中的方法，不被支持，必须在 ElementBase中 定义
      */
     if (type === 'eraser') {
-      for (let i = 0; i < this.eles.length; i++) {
-        let tmpEle = this.eles[i]
-        let tmpArr: Array<ElementBase> = []
-        if (tmpEle.getType() === 'pen' && this.helper.isRectOverlap(tmpEle.getRectContainer(), activeEle.getRectContainer())) {
-          const tmpElePointList = tmpEle.getPointList()
-          let addPointsArr: Array<Point> = []
-          for (let j = 0; j < tmpElePointList.length; j++) {
-            if (activeEle.isPointInEraserArea(tmpElePointList[j]) || j === tmpElePointList.length - 1) {
-              /**
-               * 当此时点在橡皮擦范围内时
-               * 若 addPointsArr.length > 0 说明此前有被添加的点
-               * 所以将这些点 组成一条直线，然后将 addPointsArr = []
-               */
-              if (addPointsArr.length > 0) {
-                tmpArr.push(new Pen(addPointsArr))
-                addPointsArr = []
-              }
-            } else {
-              /**
-               * 当此时点不在橡皮擦范围内时
-               * 将该点添加到 addPointsArr 中
-               */
-              addPointsArr.push(tmpElePointList[j])
-            }
-          }
-        }
-        /**
-         * 如果tmpArr.length>0 将该条直线划成几条小直线
-         * 同时调用 operatorRecorder 进行记录
-         */
-        if (tmpArr.length > 0) {
-          this.eles.splice(i, 1, ...tmpArr)
-        }
-      }
-      this.eles.pop()
-      this.elesActive = []
-      this.renderByData()
+      drawEndData = this.eraserDrawend(activeEle)
     }
     // 若是在 choose-pen 下
     if (type === 'choose-pen') {
-      // in control
-      if (this.controlGroupShow) {
-
-      } else {
-        drawEndData = this.handleChoosePen(activeEle)
-        /**
-         * 如果圈选到笔记
-         * 将圈选到的笔记放入 ctxtemp 中,同时将 control放入 ctxtemp
-         * 然后同时重新渲染 ctx ctxtemp
-         */
-        this.elesActive = []
-        if (drawEndData.choosedElesArr.length > 0) {
-          drawEndData.choosedElesArr.forEach((index: number) => {
-            let obj: ElementBase = this.eles[index]
-            this.elesActive.push(obj)
-            this.popElement([index])
-          })
-          const { centerX, centerY, width, height } = drawEndData.choosedElesOuter
-          this.controlGroup = new ControlGroup({ centerX, centerY, width, height })
-          this.controlGroup.rerenderElements = (data:any) => {
-            this.rerenderElements(data)
-          }
-          this.elesActive.push(this.controlGroup)
-          this.controlGroupShow = true
-          this.renderByData()
-          this.renderActiveEles()
-        } else {
-          /**
-           * 如果没有圈选笔记 且 不在 control 下
-           * 将圈选笔记的轨迹清楚掉 此时只有ctxtemp画布上有圈选笔记
-           */
-          this.clear(this.ctxTemp, this.canvTemp)
-        }
-      }
+      drawEndData = this.choosePenDrawend(activeEle)
     }
     // 如果是插件
     if (this.pluginsMap[type]) {

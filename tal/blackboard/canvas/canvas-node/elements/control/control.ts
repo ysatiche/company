@@ -1,5 +1,5 @@
 
-import Helper from '../../Helper'
+import Helper from '../../libs/Helper'
 import Point from '../point'
 import OriginShape from '../../libs/origin-shape'
 

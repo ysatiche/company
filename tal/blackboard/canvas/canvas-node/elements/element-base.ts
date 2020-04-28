@@ -1,5 +1,5 @@
 import Point from './point'
-import Helper from '../Helper'
+import Helper from '../libs/Helper'
 
 interface Config {
   [x: string]: any

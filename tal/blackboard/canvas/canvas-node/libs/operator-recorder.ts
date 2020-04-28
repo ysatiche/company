@@ -1,5 +1,5 @@
 import ElementBase from '../elements/element-base'
-import Helper from '../Helper'
+import Helper from './Helper'
 
 /**
  * 撤销与恢复功能
@@ -8,7 +8,10 @@ import Helper from '../Helper'
  * 删除一个元素 DEL ID 1
  * 橡皮擦功能 ERASER ID 1 TO ID 4 ID 5
  */
-
+interface HistoryStatus {
+  revokeStatus: boolean
+  recoveryStatus: boolean
+}
 
 class OperatorRecorder {
   private eles: Array<ElementBase>
@@ -16,12 +19,14 @@ class OperatorRecorder {
   private deleteEles: Array<ElementBase>
   private operatorArr: Array<string>
   private helper: any
+  private historyIdx: number
 
   constructor (eles: Array<ElementBase>, elesActive: Array<ElementBase>) {
     this.eles = eles
     this.elesActive = elesActive
     this.deleteEles = [] // 暂时丢弃的画布元素
     this.operatorArr = [] // 历史操作记录
+    this.historyIdx = - 1 // handleAddOperator下标
     this.helper = new Helper()
   }
 
@@ -36,7 +41,8 @@ class OperatorRecorder {
    * 去除字符串前后空格
    * @param str 
    */
-  trim (str: string): string {
+  trim (str: any): string {
+    if (!str) return ''
     return str.replace(/^\s*(.*?)[\s\n]*$/g,'$1')
   }
 
@@ -68,6 +74,7 @@ class OperatorRecorder {
   delElementById (id: string) {
     let idx = this.helper.findIdsInElementsArray(id, this.eles)
     if (idx > -1) {
+      this.deleteEles.push(this.eles[idx])
       this.eles.splice(idx, 1)
     }
     idx = this.helper.findIdsInElementsArray(id, this.elesActive)
@@ -87,8 +94,98 @@ class OperatorRecorder {
     }
   }
 
+  /**
+   * 撤销
+   * 从this.operatorArr pop出一个操作
+   */
+  revoke (): any {
+    console.warn(`[revoke] [this.historyIdx] ${this.historyIdx} [this.operatorArr] ${JSON.stringify(this.operatorArr)}`)
+    let status = false
+    if (this.historyIdx > -1 && this.operatorArr[this.historyIdx]) {
+      let opStr =  this.operatorArr[this.historyIdx]
+      opStr = typeof opStr === 'undefined' ? '' : opStr
+      let op = this.trim(opStr).split(' ')[0]
+      switch (op) {
+        case 'ADD':
+          this.handleAddOperator(opStr)
+          break
+        case 'DEL':
+          this.handleDelOperator(opStr)
+          break
+        default:
+          break
+      }
+      this.historyIdx--
+      status = true
+    }
+    return {
+      status: status,
+      historyStatus: this.getHistoryStatus()
+    }
+  }
+
+  /**
+   * 恢复
+   */
+  recovery (): any {
+    console.warn(`[recovery] [this.historyIdx] ${this.historyIdx} [this.operatorArr] ${JSON.stringify(this.operatorArr)}`)
+    let status = false
+    if (this.historyIdx < this.operatorArr.length - 1 && this.operatorArr[this.historyIdx + 1]) {
+      let opStr = this.operatorArr[this.historyIdx + 1]
+      opStr = typeof opStr === 'undefined' ? '' : opStr
+      let op = this.trim(opStr).split(' ')[0]
+      switch (op) {
+        case 'ADD':
+          this.handleDelOperator(opStr)
+          break
+        case 'DEL':
+          this.handleDelOperator(opStr)
+          break
+        default:
+          break
+      }
+      this.historyIdx++
+      status = true
+    }
+    return {
+      status: status,
+      historyStatus: this.getHistoryStatus()
+    }
+  }
+
+  /**
+   * 获取 revoke recovery的状态
+   */
+  getHistoryStatus  ():HistoryStatus {
+    let revokeStatus = true
+    if (this.historyIdx < 0) {
+      revokeStatus = false
+    }
+    let recoveryStatus = true
+    if (this.historyIdx >= this.operatorArr.length - 1 ) {
+      recoveryStatus = false
+    }
+    return {
+      revokeStatus,
+      recoveryStatus
+    }
+  }
+
+  /**
+   * 添加一个操作记录
+   * 判断 str 是否合法
+   */
+  addOperator (str: string): boolean {
+    if (this.checkOperatorLegal(str)) {
+      this.operatorArr.push(str)
+      this.historyIdx++
+      return true
+    } else {
+      return false
+    }
+  }
 
 }
 
-
+export default OperatorRecorder
 

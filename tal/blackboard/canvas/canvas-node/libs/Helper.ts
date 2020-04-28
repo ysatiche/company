@@ -1,6 +1,6 @@
 "use strict";
-import Point from "./elements/point"
-import ElementBase from './elements/element-base'
+import Point from "../elements/point"
+import ElementBase from '../elements/element-base'
 // import * as fs from "fs-extra"
 
 interface RectContainer {
@@ -204,7 +204,7 @@ class Helper {
   loadModuleInBrowser (dir: string): Promise<any> {
     return new Promise((resolve) => {
       // 必须在 import ()中这么写，不然将路径提出去做变量会出问题
-      import('./plugins/' + dir + '/index').then((m) => {
+      import('../plugins/' + dir + '/index').then((m) => {
         resolve(m)
       }).catch((e) => {
         resolve(false)

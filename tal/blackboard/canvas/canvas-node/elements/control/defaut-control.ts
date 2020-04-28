@@ -1,6 +1,6 @@
 import Control from './control'
 import Point from '../point'
-import Helper from '../../Helper'
+import Helper from '../../libs/Helper'
 
 const helper = new Helper()
 

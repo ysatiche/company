@@ -3,15 +3,12 @@ import Point from '../point'
 
 class Eraser extends ElementBase {
 
-  private baseLineCount: number
-
   constructor () {
     super()
     this.type = 'eraser'
     this.config = {
       eraserWidth: 60
     }
-    this.baseLineCount = 30 // 橡皮擦作用到直线后，将直线划成几个小直线，这个表示小直线拥有的最小点的数量
   }
 
   _render (ctx: CanvasRenderingContext2D): boolean {
