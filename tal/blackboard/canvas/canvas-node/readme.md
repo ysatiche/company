@@ -1,78 +1,80 @@
-# 画笔基本功能重构
+# 优化点
 
-使用 ts 构建代码，完成下面几部分功能。
+- typescript重构
 
-- 画笔
+```js
+const handWritting = new HandWritting('canvasId', 'canvasTmpId')
+```
 
-- 橡皮
+- handwritting里只包含（笔，橡皮，圈选，旋转/移动/缩放，撤销恢复基本功能）
 
-- 撤销/恢复
+笔，橡皮，圈选功能切换
 
-- 圈选/点选
+```js
+handWritting.setStatus('pen' || 'eraser' || 'choose-pen')
+```
 
-- 单个画笔/多条笔记
+旋转/移动/缩放等功能在 choose-pen 状态下，圈选元素后默认触发
 
-- 移动/缩放等操作
-
-
-## 注意点
-
-- canvas 设置宽高 <canvas id="canvasId" width="1920" height="1080"></canvas> 不能用css设置
-
-
-# 高级功能
-
-- 插件化（几何画板，尺规，神笔等）
-
-# TODO LIST
-
-- ts文件怎么批量导入某一文件夹下所有的文件模块 [done]
-
-使用 fs 相关 api 参考 helper 中的方法
-
-- 怎么传入工厂方法给 handWritting.ts 来构造 [done]
-
-参考 helper中的方法
-
-- 是否需要定义 .d.ts 来申明interface class等 [delay]
-
-- 移动缩放等功能 [todo]
-
-drawend时触发编辑外框，通过对外框的几个点 绑定 dragstart, dragmove等事件，来不断触发 activeEles 的重新渲染
-
-如何解决频繁渲染引起的卡顿？？
-
-- 优化 drawend 代码 [done]
-
-回调函数
-drawbegin
-drawing
-drawend
-render
-ispointinpath
-control(move,scale,ratate)
+撤销恢复,暂时只有 添加元素，删除元素，橡皮擦擦去元素这三种情况下进行撤销恢复,之后可添加
 
 
+- 旋转移动撤销外框 改成canvas方式绘制，并设置成可配置的
 
-- 优化 elesActive eles 代码 [done]
+自定义操作配置。
 
-画布元素列表三种：
-基础元素（pen，eraser)
-选择元素（choose-pen，control）
-插件元素（magic-pen等）
+1.继承 `./elements/control/control.ts` 
+
+2.handWritting添加自定义control
 
 
-eles: 所有元素储存 必需 (只有在添加和删除元素涉及到)
+```js
+class customControl extends control {}
+handWritting.addControl(customControl)
+```
 
-elesActive 当前活动点元素，必需 一般情况只有一个画布元素是 active，只有圈选的时候才会出现多个（添加和圈选）
+- 撤销恢复功能 改成 简单策略模式，随后可拓展成简单语法解析
 
-- 缩放/旋转/移动 [todo]
+- 神笔等配置成插件，提供必要参数，放置在 /plugins/ 下
 
-rectContainer, pointlist, matrix
+两种加载插件方法，一是将代码放到 `./plugins/` 下方，handWritting 初始化时自动加载该文件夹下每个文件夹下的 `index.ts` 文件
 
-choose-pen: rectContainer, pointlist
+第二种是调用 `handWritting.loadPlugin(name, plugin)` 来动态加载插件
 
-pen: (rectContainer, pointlist) width matrix
+怎么调用自定义插件？
+
+```js
+handWritting.setStatus(name) // name 如果是第一种加载方法的话 name是文件夹的名字，如果是第二种方法时 name 是 `handWritting.loadPlugin(name, plugin)` 中的name
+
+```
+
+最终插件开发模式，应该是继承npm包 `@peiyou/elementbase` 这种，然后基于它开发
+
+
+# 未完成
+
+- declare 问题，比如 point类型 需要文件多次引用
+
+- 旋转/移动/缩放 一次操作多种变化时会不准确
+
+- 点选功能有问题，圈选需要优化
+
+- 撤销恢复基本功能未完善 [todo]
+
+- 神笔/尺规/几何图形等功能未完成
+
+- 手掌橡皮未完成
+
+
+# 其他
+
+- canvas 设置宽高
+
+```html
+<!-- 不能用css设置 -->
+<canvas id="canvasId" width="1920" height="1080"></canvas>
+```
+
 
 
 

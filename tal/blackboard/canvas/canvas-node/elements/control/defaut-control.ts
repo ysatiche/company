@@ -57,7 +57,7 @@ function handleScaleLeftTop (start: Point, end: Point, controlPos: ControlPos): 
   let left = controlPos.centerX - controlPos.width / 2
   let top = controlPos.centerY - controlPos.height / 2
   let finalLeft = left + (end.x - start.x)
-  let finalTop = top + (end.y - start.y)
+  // let finalTop = top + (end.y - start.y)
   let width = controlPos.width - (end.x - start.x)
   let height = controlPos.height - (end.y - start.y)
   let w = width - height
@@ -65,16 +65,74 @@ function handleScaleLeftTop (start: Point, end: Point, controlPos: ControlPos): 
     width = height
     finalLeft += w
   }
-  let origin = new Point(left + controlPos.width, top + controlPos.height) // 变换的参考点
+  // let origin = new Point(left + controlPos.width, top + controlPos.height) // 变换的参考点
   let scaleObj = { scaleX: width / controlPos.width, scaleY: height / controlPos.height } // 缩放比例
-  // 获取新的pos
-  // let newPos = {
-  //   centerX: origin.x - scaleObj.scaleX * controlPos.width * 0.5,
-  //   centerY: origin.y - scaleObj.scaleY * controlPos.height * 0.5,
-  //   width: scaleObj.scaleX * controlPos.width,
-  //   height: scaleObj.scaleY * controlPos.height
-  // }
   const res =  scale(scaleObj, new Point(left + controlPos.width, top + controlPos.height))
+  return res
+}
+
+/**
+ * 右上角缩放点
+ */
+function handleScaleRightTop (start: Point, end: Point, controlPos: ControlPos): MatrixObj {
+  let left = controlPos.centerX - controlPos.width / 2
+  let top = controlPos.centerY - controlPos.height / 2 + (end.y - start.y)
+  let width = controlPos.width + (end.x - start.x)
+  let height = controlPos.height - (end.y - start.y)
+  let w = width - height
+  if (Math.abs(w) < 20) {
+    width = height
+  }
+  // let origin = new Point(left + controlPos.width, top + controlPos.height) // 变换的参考点
+  let scaleObj = { scaleX: width / controlPos.width, scaleY: height / controlPos.height } // 缩放比例
+  const res =  scale(scaleObj, new Point(left, controlPos.centerY + controlPos.height / 2))
+  return res
+}
+
+/**
+ * 左下角缩放点
+ */
+function handleScaleLeftBottom (start: Point, end: Point, controlPos: ControlPos): MatrixObj {
+  let left = controlPos.centerX - controlPos.width / 2
+  let top = controlPos.centerY - controlPos.height / 2
+  let width = controlPos.width - (end.x - start.x)
+  let height = controlPos.height + (end.y - start.y)
+  // let origin = new Point(left + controlPos.width, top + controlPos.height) // 变换的参考点
+  let scaleObj = { scaleX: width / controlPos.width, scaleY: height / controlPos.height } // 缩放比例
+  const res =  scale(scaleObj, new Point(left + controlPos.width, top))
+  return res
+}
+
+/**
+ * 右下角缩放点
+ */
+function handleScaleRightBottom (start: Point, end: Point, controlPos: ControlPos): MatrixObj {
+  let left = controlPos.centerX - controlPos.width / 2
+  let top = controlPos.centerY - controlPos.height / 2
+  let width = controlPos.width + (end.x - start.x)
+  let height = controlPos.height + (end.y - start.y)
+  // let origin = new Point(left + controlPos.width, top + controlPos.height) // 变换的参考点
+  let scaleObj = { scaleX: width / controlPos.width, scaleY: height / controlPos.height } // 缩放比例
+  const res =  scale(scaleObj, new Point(left, top))
+  return res
+}
+
+/**
+ * 缩放时需要获取的参数 正上方
+ * @param { Point } start 移动的起始点 
+ * @param { Point } end 移动的终点 
+ */
+function handleScaleTop (start: Point, end: Point, controlPos: ControlPos): MatrixObj {
+  let left = controlPos.centerX - controlPos.width / 2
+  let top = controlPos.centerY - controlPos.height / 2 + (end.y - start.y)
+  let width = controlPos.width
+  let height = controlPos.height - (end.y - start.y)
+  let w = width - height
+  if (Math.abs(w) < 20) {
+    height = width
+  }
+  let scaleObj = { scaleX: 1, scaleY: height / controlPos.height } // 缩放比例
+  const res =  scale(scaleObj, new Point(left, top + controlPos.height))
   return res
 }
 
@@ -152,6 +210,62 @@ export default function (pos: ControlPos): {[x: string]: Control} {
       name: 'lt',
       actionHandler: handleScaleLeftTop
     }),
+    // 右上角缩放点
+    'rt': new Control({
+      position: {
+        x: 0.5,
+        y: -0.5
+      },
+      centerPos: pos,
+      actionName: 'scale',
+      styleOverride: {
+        cornerStyle: 'circle'
+      },
+      name: 'rt',
+      actionHandler: handleScaleRightTop
+    }),
+    // 左下角缩放点
+    'lb': new Control({
+      position: {
+        x: -0.5,
+        y: 0.5
+      },
+      centerPos: pos,
+      actionName: 'scale',
+      styleOverride: {
+        cornerStyle: 'circle'
+      },
+      name: 'lb',
+      actionHandler: handleScaleLeftBottom
+    }),
+    // 右下角缩放点
+    'rb': new Control({
+      position: {
+        x: 0.5,
+        y: 0.5
+      },
+      centerPos: pos,
+      actionName: 'scale',
+      styleOverride: {
+        cornerStyle: 'circle'
+      },
+      name: 'rb',
+      actionHandler: handleScaleRightBottom
+    }),
+    // 上方缩放点
+    // 'tc': new Control({
+    //   position: {
+    //     x: 0,
+    //     y: -0.5
+    //   },
+    //   centerPos: pos,
+    //   actionName: 'scale',
+    //   styleOverride: {
+    //     cornerStyle: 'circle'
+    //   },
+    //   name: 'tc',
+    //   actionHandler: handleScaleTop
+    // }),
     // 中心正上方 旋转
     'ct': new Control({
       position: {
@@ -160,7 +274,7 @@ export default function (pos: ControlPos): {[x: string]: Control} {
       },
       offset: {
         offsetX: 0,
-        offsetY: -20
+        offsetY: -40
       },
       centerPos: pos,
       actionName: 'rotate',

@@ -69,6 +69,37 @@ class OperatorRecorder {
   }
 
   /**
+   * 对橡皮擦除元素的 revoke
+   * eg. ERASER ID 1 TO ID 4 ID 5 && ERASER ID 6 TO ID 4 ID 7
+   */
+  handleEraserOperator (str: string, op: string): void {
+    console.warn(`[handleEraserOperator] [op] ${op} [str] ${str} [deleteEles] ${JSON.stringify(this.helper.getElementBaseInfo(this.deleteEles))}`)
+    let strOpts = str.split('&&')
+    for (let esIdx = 0; esIdx < strOpts.length; esIdx++) {
+      let arr = this.trim(strOpts[esIdx]).split('TO')
+      let eraserId = this.trim(arr[0].split('ID')[1])
+      let geneIdArr = arr[1].split('ID')
+      // geneIdArr 会出现 ['', ' 4 ', ' 5 ']
+      console.warn(`[handleEraserOperator][eraserId] ${eraserId} [geneIdArr] ${JSON.stringify(geneIdArr)}`)
+      if (op === 'revoke') {
+        let idx = this.helper.findIdsInElementsArray(eraserId, this.deleteEles)
+        if (idx > -1) {
+          this.eles.push(this.deleteEles[idx])
+          for (let i = 0; i < geneIdArr.length; i++) {
+            let geId = this.helper.findIdsInElementsArray(this.trim(geneIdArr[i]), this.eles)
+            if (geId > -1) {
+              this.deleteEles.push(this.eles[geId])
+              this.eles.splice(geId, 1)
+            }
+          }
+        }
+      } else if (op === 'recovery') {
+
+      }
+    }
+  }
+
+  /**
    * 删除某id的元素
    */
   delElementById (id: string) {
@@ -111,6 +142,9 @@ class OperatorRecorder {
           break
         case 'DEL':
           this.handleDelOperator(opStr)
+          break
+        case 'ERASER':
+          this.handleEraserOperator(opStr, 'revoke')
           break
         default:
           break
@@ -175,10 +209,13 @@ class OperatorRecorder {
    * 添加一个操作记录
    * 判断 str 是否合法
    */
-  addOperator (str: string): boolean {
+  addOperator (str: string, arr?: Array<ElementBase>): boolean {
     if (this.checkOperatorLegal(str)) {
       this.operatorArr.push(str)
       this.historyIdx++
+      if (arr && arr.length > 0) {
+        this.deleteEles.push(...arr)
+      }
       return true
     } else {
       return false

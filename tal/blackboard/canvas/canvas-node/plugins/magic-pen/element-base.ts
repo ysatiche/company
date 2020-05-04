@@ -19,6 +19,26 @@ class Point {
   }
 
 class Helper {
+
+  uuidv4(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+  /*
+    矩阵叠加 a * b
+  */
+  multiplyTransformMatrices (a: Array<number>, b:Array<number>) {
+    return [
+      a[0] * b[0] + a[2] * b[1],
+      a[1] * b[0] + a[3] * b[1],
+      a[0] * b[2] + a[2] * b[3],
+      a[1] * b[2] + a[3] * b[3],
+      a[0] * b[4] + a[2] * b[5] + a[4],
+      a[1] * b[4] + a[3] * b[5] + a[5]
+    ]
+  }
   
   /*
     判断两个方框是否相交
@@ -58,14 +78,6 @@ interface RectContainer {
   top: number
 }
 
-
-interface RectContainer {
-  left: number
-  right: number
-  bottom: number
-  top: number
-}
-
 interface CtxConfig {
   renderCtx: string
   saveCtx: boolean
@@ -87,17 +99,18 @@ class ElementBase {
   protected pointList: Array<Point>
   protected transformMatrix: Array<number>
   private id: number
+  private uuid: string
   protected type: string
   protected finish: boolean
   protected from: number
   protected rectContainer: RectContainer
-  private helper: Helper
+  protected helper: Helper
   protected ctxConfig: CtxConfig
 
-  constructor () {
+  constructor (pointList?: Array<Point>) {
     // 绘制元素的ID号，用于查找到指定元素
     this.id = -1
-    this.pointList = []
+    this.pointList = pointList ? pointList : []
     // 元素配置
     this.config = {
       lineColor: '#000000',
@@ -108,6 +121,7 @@ class ElementBase {
     this.finish = false
     this.from = 0
     this.helper = new Helper()
+    this.uuid = this.helper.uuidv4()
     this.ctxConfig = {
       renderCtx: 'ctx',
       saveCtx: true
@@ -122,6 +136,10 @@ class ElementBase {
 
   getType (): string {
     return this.type
+  }
+
+  getUuid (): string {
+    return this.uuid
   }
 
   getPointList (): Array<Point> {
@@ -142,7 +160,7 @@ class ElementBase {
     this._addPoint(curPoint)
   }
 
-  drawEnd(event: PointerEvent): any {
+  drawEnd(event: PointerEvent, ctx?: CanvasRenderingContext2D, eles?: Array<ElementBase>): any {
     if (event) {
       let curPoint = this._getPoint(event)
       this._addPoint(curPoint)
@@ -178,6 +196,17 @@ class ElementBase {
     return result
   }
 
+  rerender (context: CanvasRenderingContext2D): boolean {
+    this.from = 0
+    this.rectContainer = {
+      left: -1,
+      right: -1,
+      bottom: -1,
+      top: -1
+    }
+    return this.render(context)
+  }
+
   _beginRender (context: CanvasRenderingContext2D) {
     context.save()
     context.transform(this.transformMatrix[0], this.transformMatrix[1], this.transformMatrix[2], this.transformMatrix[3], this.transformMatrix[4], this.transformMatrix[5])
@@ -206,6 +235,10 @@ class ElementBase {
     return this.finish
   }
 
+  resetStartIndex () {
+    this.from = 0
+  }
+
   isFinish (): boolean {
     return this.finish
   }
@@ -229,23 +262,17 @@ class ElementBase {
    */
   judgeIsPointInPath (ctx: CanvasRenderingContext2D, chooseZoneInfo: any, scale: number) {
     let calcSteps = 6
-    let preDrawPoints = []
-    if (this.type === 'pen') { // 兼容笔记的内存优化方案
-      let drawPoints = JSON.parse(JSON.stringify(this.pointList))
-      for (let v of drawPoints) {
-        preDrawPoints.push(this.helper.transformPoint(v, this.transformMatrix))
-      }
-    } else {
-      for (let v of this.pointList) {
-        preDrawPoints.push(this.helper.transformPoint(v, this.transformMatrix))
-      }
-    }
-    const info = this.rectContainer
+    const info = this.getRectContainer()
+    console.warn(`[judgeIsPointInPath] [chooseZoneInfo] ${JSON.stringify(chooseZoneInfo)} [this.rectContainer] ${JSON.stringify(info)} [scale] ${scale}`)
     if (this.helper.isRectOverlap(chooseZoneInfo, info)) {
       for (let j = 0; j < this.pointList.length;) {
-        let point = this.pointList[j]
+        // let point = this.pointList[j]
+        let point = this.helper.transformPoint(this.pointList[j], this.transformMatrix)
         // 对旋转，移动，缩放的元素的点进行处理
-        if (this.helper.isPointInRect(this.helper.transformPoint(point, this.transformMatrix), chooseZoneInfo) && ctx.isPointInPath(point.x * scale, point.y * scale)) {
+        let isPointInRect = this.helper.isPointInRect(point, chooseZoneInfo)
+        let isPointInPath = ctx.isPointInPath(point.x * scale, point.y * scale)
+        console.warn(`[judgeIsPointInPath] [isPointInRect] ${isPointInRect} [isPointInPath] ${isPointInPath}`)
+        if (isPointInRect && isPointInPath) {
           return true
         }
         j = j + calcSteps
@@ -268,6 +295,7 @@ class ElementBase {
         ctx.beginPath()
         ctx.moveTo(this.pointList[i].x, this.pointList[i].y)
       } else {
+        this.updateRectContainer(this.helper.transformPoint(this.pointList[i], this.transformMatrix))
         this._renderLineTo(ctx, this.pointList[i])
       }
     }
@@ -290,7 +318,7 @@ class ElementBase {
   _addPoint (point: Point): number {
     if (this._pointFilter(point)) {
       this.pointList.push(point)
-      this.updateRectContainer(point)
+      // this.updateRectContainer(point)
       return this.pointList.length
     } else {
       return -1
@@ -326,6 +354,28 @@ class ElementBase {
 
   setConfig (cfg: object): void {
     this.config = cfg
+  }
+
+  // 移动/缩放/旋转 等操作更改 matrix
+  updateMatrix (matrix: { actionName: string, matrix: any}) {
+    switch(matrix.actionName) {
+      case 'translate':
+        this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
+        break
+      case 'scale':
+        this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
+        break
+      case 'angle':
+        this.transformMatrix = this.helper.multiplyTransformMatrices(matrix.matrix, this.transformMatrix)
+        break
+      default:
+        break
+    }
+  }
+
+  // TODO Eraser需要的函数
+  isPointInEraserArea (x: any): any {
+    
   }
 }
 

@@ -56,8 +56,14 @@ class ElementBase {
     this.from = 0
     this.helper = new Helper()
     this.uuid = this.helper.uuidv4()
+    /**
+     * ctxConfig
+     * 当前 Elementbase 在画布上的相关配置
+     * renderCtx 绘制的时候是在主画布还是临时画布
+     * saveCtx 是否要保留第一次渲染的东西, 比如神笔就不用保留
+     */
     this.ctxConfig = {
-      renderCtx: 'ctx',
+      renderCtx: 'ctx', 
       saveCtx: true
     }
     this.rectContainer = {
@@ -94,7 +100,7 @@ class ElementBase {
     this._addPoint(curPoint)
   }
 
-  drawEnd(event: PointerEvent): any {
+  drawEnd(event: PointerEvent, ctx?: CanvasRenderingContext2D, eles?: Array<ElementBase>): any {
     if (event) {
       let curPoint = this._getPoint(event)
       this._addPoint(curPoint)

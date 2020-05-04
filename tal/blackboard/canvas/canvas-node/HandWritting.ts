@@ -54,7 +54,7 @@ class HandWritting {
     this.controlGroupShow = false // 是否显示control
     this.historyIndex = -1 // 当前页撤销回退坐标
     this.gpuEnable = false // gpu是否满足要求
-    this.baseLineCount = 20 // 橡皮擦作用到直线后，将直线划成几个小直线，这个表示小直线拥有的最小点的数量
+    this.baseLineCount = 5 // 橡皮擦作用到直线后，将直线划成几个小直线，这个表示小直线拥有的最小点的数量
     this.helper.loadModulesInBrowser(['magic-pen']).then((modules) => {
       this.pluginsMap = modules
     })
@@ -82,11 +82,6 @@ class HandWritting {
 
     /* 开启画布渲染 */
     this.startRender()
-
-    // todo
-    setTimeout(() => {
-      // this.status = 'choose-pen'
-    }, 4000)
   }
 
   startRender () {
@@ -332,6 +327,8 @@ class HandWritting {
    * 橡皮擦 drawend 后的处理
    */
   eraserDrawend (activeEle: ElementBase): any {
+    let opstr = '' // 历史操作记录
+    let delEle = [] // 被删除的元素
     for (let i = 0; i < this.eles.length; i++) {
       let tmpEle = this.eles[i]
       let tmpArr: Array<ElementBase> = []
@@ -365,9 +362,17 @@ class HandWritting {
        * 同时调用 operatorRecorder 进行记录
        */
       if (tmpArr.length > 0) {
-        this.eles.splice(i, 1, ...tmpArr)
+        let ids = ''
+        tmpArr.forEach((tmp) => {
+          ids += ` ID ${tmp.getUuid()}`
+        })
+        opstr = opstr.length > 0 ? opstr + `&& ERASER ID ${this.eles[i].getUuid()} TO ${ids}` : `ERASER ID ${this.eles[i].getUuid()} TO ${ids}`
+        const delItem = this.eles.splice(i, 1, ...tmpArr)
+        delEle.push(...delItem)
       }
     }
+    console.warn(`[eraserDrawend] [operatorRecorder.addOperator] ${opstr} [delEle.length] ${delEle.length}`)
+    this.operatorRecorder.addOperator(opstr, delEle)
     this.eles.pop()
     this.elesActive = []
     this.renderByData()
@@ -487,6 +492,16 @@ class HandWritting {
     }
     // console.warn(`[handleChoosePen] [choosedElesOuter] ${JSON.stringify(choosedElesOuter)}`)
     return { choosedElesArr, choosedElesOuter }
+  }
+
+  /**
+   * 添加 自定义 control 类
+   * 该自定义control 类需要继承 control.ts 
+   */
+  addControl (control: any) {
+    if (this.controlGroup) {
+      this.controlGroup.addControl(control)
+    }
   }
 
   // plugins api
